@@ -1,0 +1,20 @@
+#pragma once
+
+#include <string>
+#include <string_view>
+#include <iostream>
+#include <fstream>
+#include <filesystem>
+#include <optional>
+#include <variant>
+#include <thread>
+#include <future>
+#include <algorithm>
+#include <memory>
+#include <list>
+#include <vector>
+#include <set>
+#include <unordered_set>
+#include <map>
+#include <unordered_map>
+#include <cstdint>

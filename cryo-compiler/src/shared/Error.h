@@ -1,0 +1,32 @@
+#pragma once
+#include <memory>
+#include <vector>
+
+namespace cryo {
+
+    class Error {
+    public:
+        virtual ~Error() = default;
+
+        virtual void log() = 0;
+    };
+
+    class ErrorQueue {
+    public:
+        ErrorQueue() = default;
+        ~ErrorQueue();
+
+        void log() const;
+        void clean();
+
+        template<typename ErrorType, typename... Args>
+        void push_error(Args&&... args) {
+            static_assert(std::is_base_of_v<Error, ErrorType>);
+
+            m_Errors.push_back(new ErrorType(std::forward<Args>(args)...));
+        }
+
+    private:
+        std::vector<Error*> m_Errors;
+    };
+}
