@@ -4,11 +4,19 @@
 
 namespace cryo {
 
+    enum class ErrorSeverity {
+        None = 0,
+        Warning,
+        Error,
+        Fatal
+    };
+
     class Error {
     public:
         virtual ~Error() = default;
 
         virtual void log() = 0;
+        virtual ErrorSeverity get_severity() = 0;
     };
 
     class ErrorQueue {
@@ -18,6 +26,8 @@ namespace cryo {
 
         void log() const;
         void clean();
+
+        ErrorSeverity get_severity() const;
 
         template<typename ErrorType, typename... Args>
         void push_error(Args&&... args) {

@@ -10,7 +10,13 @@ add_executable(cryoc src/main.cpp
         src/compiler/Lexer.cpp
         src/compiler/Lexer.h
         src/compiler/Token.h
+        src/shared/Arguments.cpp
+        src/shared/Arguments.h
+        src/compiler/CompilerError.cpp
+        src/compiler/CompilerError.h
 )
+
+set_property(TARGET cryoc PROPERTY CXX_STANDARD 23)
 
 include_directories(src
         ../vendor/argparse/include)

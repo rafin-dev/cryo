@@ -1,25 +1,20 @@
 #include <iostream>
 #include <string>
+#include <print>
 
 #include <argparse/argparse.hpp>
 
-int main(int argc, char ** argv) {
-    argparse::ArgumentParser parser("cryoc", "0.0.0", argparse::default_arguments::help);
-    parser.add_argument("-i", "--input_files")
-        .required()
-        .help("List of cryo source files to be compiled")
-        .nargs(argparse::nargs_pattern::at_least_one);
-    parser.add_argument("-o", "--output_file")
-        .help("Output file")
-        .default_value("out.crye");
+#include "compiler/Lexer.h"
+#include "shared/Arguments.h"
 
-    try {
-        parser.parse_args(argc, argv);
-    } catch (const std::exception& err) {
-        std::cerr << err.what() << std::endl;
-        std::cerr << parser;
-        return 1;
-    }
+int main(int argc, const char ** argv) {
+    const cryo::Arguments args(argc, argv);
 
-    return 0;
+    std::fstream file(*args.SourceFiles.begin());
+    std::stringstream sstream;
+    sstream << file.rdbuf();
+
+    cryo::compiler::Lexer lexer(sstream.str(), *args.SourceFiles.begin());
+    auto [fst, snd] = lexer.get_tokens();
+    snd.log();
 }

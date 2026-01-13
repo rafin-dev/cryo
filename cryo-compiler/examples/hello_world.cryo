@@ -1,3 +1,4 @@
 fn main() {
-    let test: int;
+   @
+   let test: int = "Hello, World;
 }

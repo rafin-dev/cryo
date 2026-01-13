@@ -19,4 +19,14 @@ namespace cryo {
         }
         m_Errors.clear();
     }
+
+    ErrorSeverity ErrorQueue::get_severity() const {
+        auto sv = ErrorSeverity::None;
+        for (auto& error : m_Errors) {
+            if (error->get_severity() > sv) {
+                sv = error->get_severity();
+            }
+        }
+        return sv;
+    }
 }
