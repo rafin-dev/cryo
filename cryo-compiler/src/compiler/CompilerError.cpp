@@ -53,13 +53,12 @@ namespace cryo::compiler {
             m_PreviousLine = src.substr(prev_line_start, prev_line_size);
         }
 
-        auto [post_line_start, post_line_size] = get_line(src, m_LineNumber + 1);
-        if (post_line_start != -1) {
+        if (auto [post_line_start, post_line_size] = get_line(src, m_LineNumber + 1); post_line_start != -1) {
             m_PostLine = src.substr(post_line_start, post_line_size);
         }
     }
 
-    static const char* get_severity_str(ErrorSeverity severity) {
+    static const char* get_severity_str(const ErrorSeverity severity) {
         switch (severity) {
             case ErrorSeverity::Warning: return "[WARNING: ";
             case ErrorSeverity::Error: return "[ERROR: ";
@@ -122,6 +121,11 @@ namespace cryo::compiler {
 
     std::unordered_map<std::string_view, ErrorSeverity> CompilerError::s_Severities = {
         { CE_INVALID_CHARACTER,                      ErrorSeverity::Error },
-        { CE_STRING_MISSING_END,                     ErrorSeverity::Error }
+        { CE_STRING_MISSING_END,                     ErrorSeverity::Error },
+        { CE_UNEXPECTED_END,                         ErrorSeverity::Error },
+        { CE_INVALID_TOKEN,                          ErrorSeverity::Error },
+        { CE_UNFINISHED_SCOPE,                       ErrorSeverity::Error },
+        { CE_EMPTY_EXPRESSION,                       ErrorSeverity::Error },
+        { CE_NO_PARENTHESIS_TO_CLOSE,                ErrorSeverity::Error },
     };
 }

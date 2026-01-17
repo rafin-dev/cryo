@@ -14,7 +14,7 @@ namespace cryo::compiler {
         ErrorSeverity get_severity() override { return m_Severity; }
 
     private:
-        std::pair<int, int> get_line(const std::string& file, uint32_t line_number) const;
+        [[nodiscard]] std::pair<int, int> get_line(const std::string& file, uint32_t line_number) const;
 
         ErrorSeverity m_Severity;
 
@@ -37,3 +37,8 @@ namespace cryo::compiler {
 
 #define CE_INVALID_CHARACTER                      "CE1001"
 #define CE_STRING_MISSING_END                     "CE1002"
+#define CE_UNEXPECTED_END                         "CE1003"
+#define CE_INVALID_TOKEN                          "CE1004"
+#define CE_UNFINISHED_SCOPE                       "CE1005"
+#define CE_EMPTY_EXPRESSION                       "CE1006"
+#define CE_NO_PARENTHESIS_TO_CLOSE                "CE1007"

@@ -27,7 +27,7 @@ namespace cryo {
         void log() const;
         void clean();
 
-        ErrorSeverity get_severity() const;
+        [[nodiscard]] ErrorSeverity get_severity() const;
 
         template<typename ErrorType, typename... Args>
         void push_error(Args&&... args) {

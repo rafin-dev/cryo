@@ -1,4 +1,3 @@
 fn main() {
-   @
-   let test: int = "Hello, World;
+   var test: i32 = 10 * (20 + 5) / 2;
 }
