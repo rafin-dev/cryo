@@ -29,6 +29,8 @@ namespace cryo {
 
         [[nodiscard]] ErrorSeverity get_severity() const;
 
+        void push_ErrorQueue(ErrorQueue& queue);
+
         template<typename ErrorType, typename... Args>
         void push_error(Args&&... args) {
             static_assert(std::is_base_of_v<Error, ErrorType>);

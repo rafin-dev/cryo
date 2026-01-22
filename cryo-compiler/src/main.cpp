@@ -5,22 +5,25 @@
 #include <argparse/argparse.hpp>
 
 #include "compiler/AstBuilder.h"
+#include "compiler/Compiler.h"
 #include "compiler/Lexer.h"
 #include "shared/Arguments.h"
 
-int main(int argc, const char ** argv) {
+int main(const int argc, const char ** argv) {
     const cryo::Arguments args(argc, argv);
 
-    std::fstream file(*args.SourceFiles.begin());
-    std::stringstream stream;
-    stream << file.rdbuf();
+    for (auto& file : args.SourceFiles) {
+        if (!std::filesystem::exists(file)) {
+            std::cerr << "File " << file << " does not exist!" << std::endl;
+            return -1;
+        }
+        if (!std::filesystem::is_regular_file(file)) {
+            std::cerr << "Path " << file << " does not lead to a regular file!" << std::endl;
+            return -1;
+        }
 
-    auto src = std::make_shared<std::string>(stream.str());
-    cryo::compiler::Lexer lexer(src, *args.SourceFiles.begin());
-    auto [fst, snd] = lexer.get_tokens();
-    snd.log();
-
-    cryo::compiler::AstBuilder builder(*args.SourceFiles.begin(), fst, src);
-    auto [tree, errors] = builder.build_tree();
-    errors.log();
+        std::cout << "[Compiling source file: '" << file << "']" << std::endl;
+        auto compiler = cryo::compiler::Compiler(file, std::filesystem::path());
+        compiler.compile().log();
+    }
 }

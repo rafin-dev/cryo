@@ -14,7 +14,7 @@ namespace cryo {
     }
 
     void ErrorQueue::clean() {
-        for (auto err : m_Errors) {
+        for (const auto err : m_Errors) {
             delete err;
         }
         m_Errors.clear();
@@ -28,5 +28,10 @@ namespace cryo {
             }
         }
         return sv;
+    }
+
+    void ErrorQueue::push_ErrorQueue(ErrorQueue &queue) {
+        m_Errors.append_range(queue.m_Errors);
+        queue.m_Errors.clear();
     }
 }

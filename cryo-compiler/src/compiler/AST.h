@@ -12,11 +12,13 @@ namespace cryo::compiler {
         virtual ~Node() = default;
     };
 
+    std::string node_to_string(const Node* node);
+
     struct IdentifierNode : public Node {
         IdentifierNode(Token id)
             : Identifier(std::move(id)) {
             if (id.Type != TokenType::IDENTIFIER) {
-                throw std::logic_error("Identifier node cannot be creted with non identifier token!");
+                throw std::logic_error("Identifier node cannot be created with non identifier token!");
             }
         }
         ~IdentifierNode() override = default;
@@ -53,8 +55,8 @@ namespace cryo::compiler {
         std::unique_ptr<Node> RightValue;
     };
 
-    struct UnaryOperator : public Node {
-        ~UnaryOperator() override = default;
+    struct UnaryOperation : public Node {
+        ~UnaryOperation() override = default;
 
         Token Operator;
         std::unique_ptr<Node> Value;

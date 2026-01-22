@@ -13,20 +13,20 @@ namespace cryo::compiler {
         : m_File(std::move(file)), m_Tokens(std::move(tokens)), m_Source(std::move(source)) {
     }
 
-    std::pair<std::vector<std::unique_ptr<Node>>, ErrorQueue> AstBuilder::build_tree() {
-        std::vector<std::unique_ptr<Node>> node_vec;
+    std::pair<std::unique_ptr<NodeBlock>, ErrorQueue> AstBuilder::build_tree() {
+        auto node_block = std::make_unique<NodeBlock>();
         m_CurrentToken = 0;
         m_ErrorQueue.clean();
 
         for (const Token* token = &peek(); token->Type != TokenType::END_OF_FILE; token = &peek()) {
             if (token->Type == TokenType::FN) {
                 if (auto func = build_function_ast(); func != nullptr) {
-                    node_vec.emplace_back(std::move(func));
+                    node_block->Block.emplace_back(std::move(func));
                 }
             }
         }
 
-        return { std::move(node_vec), std::move(m_ErrorQueue) };
+        return { std::move(node_block), std::move(m_ErrorQueue) };
     }
 
     std::unique_ptr<FunctionDefinitionNode> AstBuilder::build_function_ast() {
@@ -117,6 +117,8 @@ namespace cryo::compiler {
                         }
                         break;
                     }
+
+                    case TokenType::SEMICOLON: break;
 
                     default: {
                         push_error(CE_INVALID_TOKEN,
@@ -300,7 +302,7 @@ namespace cryo::compiler {
                     return nullptr;
                 }
 
-                auto op_node = std::make_unique<UnaryOperator>();
+                auto op_node = std::make_unique<UnaryOperation>();
                 op_node->Operator = operator_token;
                 op_node->Value = build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
                 return op_node->Value != nullptr ? std::move(op_node) : nullptr;
@@ -318,11 +320,21 @@ namespace cryo::compiler {
         const uint32_t start = m_CurrentToken;
         uint32_t size = 0;
 
+        uint32_t open_braces = 0;
         bool found_semicolon = false;
         for (auto* token = &peek(); token->Type != TokenType::END_OF_FILE; token = &advance()) {
             if (token->Type == TokenType::SEMICOLON) {
                 found_semicolon = true;
                 break;
+            }
+            if (token->Type == TokenType::LEFT_BRACE) {
+                open_braces++;
+            } else if (token->Type == TokenType::RIGHT_BRACE) {
+                if (open_braces == 0) { // Hit the end of something before finding the semicolon, abort expression to avoid cascading errors
+                    retreat();
+                    break;
+                }
+                open_braces--;
             }
 
             size++;
@@ -430,6 +442,14 @@ namespace cryo::compiler {
 
         m_ErrorQueue.push_error<CompilerError>(error_code, error_message, m_File,
                 token->LineNumber, *m_Source, token->IndexFromSource, token->lexeme.size());
+    }
+
+    const Token & AstBuilder::retreat() {
+        if (m_CurrentToken > 0) {
+            m_CurrentToken--;
+        }
+
+        return m_Tokens->at(m_CurrentToken);
     }
 
     const Token& AstBuilder::advance() {

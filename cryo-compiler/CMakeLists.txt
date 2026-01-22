@@ -17,6 +17,9 @@ add_executable(cryoc src/main.cpp
         src/compiler/AST.h
         src/compiler/AstBuilder.cpp
         src/compiler/AstBuilder.h
+        src/compiler/AST.cpp
+        src/compiler/Compiler.cpp
+        src/compiler/Compiler.h
 )
 
 set_property(TARGET cryoc PROPERTY CXX_STANDARD 23)

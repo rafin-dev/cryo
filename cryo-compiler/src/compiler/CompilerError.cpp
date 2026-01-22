@@ -92,7 +92,7 @@ namespace cryo::compiler {
             std::cout << m_LineNumber + 1 << " | " << m_PostLine << std::endl;
         }
 
-        std::cout << "-- Message: " << m_Message << " --" << std::endl;
+        std::cout << "-- Message: " << m_Message << " --" << std::endl << std::endl;
     }
 
     std::pair<int, int> CompilerError::get_line(const std::string &file, uint32_t line_number) const {

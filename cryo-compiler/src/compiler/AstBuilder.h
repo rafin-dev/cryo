@@ -9,7 +9,7 @@ namespace cryo::compiler {
     public:
         explicit AstBuilder(std::filesystem::path file, std::shared_ptr<std::vector<Token>> tokens, std::shared_ptr<std::string> source);
 
-        std::pair<std::vector<std::unique_ptr<Node>>, ErrorQueue> build_tree();
+        std::pair<std::unique_ptr<NodeBlock>, ErrorQueue> build_tree();
 
     private:
         std::unique_ptr<FunctionDefinitionNode> build_function_ast();
@@ -23,6 +23,7 @@ namespace cryo::compiler {
 
         void push_error(std::string_view error_code, const std::string& error_message, const Token* token = nullptr);
 
+        const Token& retreat();
         const Token& advance();
         [[nodiscard]] const Token* previous() const;
         [[nodiscard]] const Token& peek() const;
