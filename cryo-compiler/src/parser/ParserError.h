@@ -2,13 +2,13 @@
 
 #include "shared/Error.h"
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
-    class CompilerError : public Error {
+    class ParserError : public Error {
     public:
-        CompilerError(std::string_view error_code, std::string error_message, std::filesystem::path file, uint32_t line_number,
+        ParserError(std::string_view error_code, std::string error_message, std::filesystem::path file, uint32_t line_number,
             const std::string& src, uint32_t highlight_start, uint32_t highlight_size);
-        ~CompilerError() override = default;
+        ~ParserError() override = default;
 
         void log() override;
         ErrorSeverity get_severity() override { return m_Severity; }

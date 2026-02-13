@@ -1,7 +1,7 @@
 #include "cryopch.h"
 #include "AST.h"
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
     static std::string nodeBlock_to_string(const NodeBlock* block) {
         std::string str;

@@ -1,5 +1,5 @@
 #include "cryopch.h"
-#include "CompilerError.h"
+#include "ParserError.h"
 
 #include <utility>
 
@@ -21,9 +21,9 @@
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
-    CompilerError::CompilerError(const std::string_view error_code, std::string error_message, std::filesystem::path file,
+    ParserError::ParserError(const std::string_view error_code, std::string error_message, std::filesystem::path file,
         const uint32_t line_number, const std::string &src, uint32_t highlight_start, uint32_t highlight_size)
             : m_ErrorCode(error_code), m_Message(std::move(error_message)), m_File(std::move(file)), m_LineNumber(line_number) {
 
@@ -68,7 +68,7 @@ namespace cryo::compiler {
         }
     }
 
-    void CompilerError::log() {
+    void ParserError::log() {
         const char* error_type = get_severity_str(m_Severity);
         std::cout << RED << error_type << m_ErrorCode << "]" RESET " at file: " << m_File << std::endl;
 
@@ -95,7 +95,7 @@ namespace cryo::compiler {
         std::cout << "-- Message: " << m_Message << " --" << std::endl << std::endl;
     }
 
-    std::pair<int, int> CompilerError::get_line(const std::string &file, uint32_t line_number) const {
+    std::pair<int, int> ParserError::get_line(const std::string &file, uint32_t line_number) const {
         int line_start = 0;
         int line_size = 0;
         bool found_line = false;
@@ -119,7 +119,7 @@ namespace cryo::compiler {
         return found_line ? std::pair(line_start, line_size) : std::pair(-1, -1);
     }
 
-    std::unordered_map<std::string_view, ErrorSeverity> CompilerError::s_Severities = {
+    std::unordered_map<std::string_view, ErrorSeverity> ParserError::s_Severities = {
         { CE_INVALID_CHARACTER,                      ErrorSeverity::Error },
         { CE_STRING_MISSING_END,                     ErrorSeverity::Error },
         { CE_UNEXPECTED_END,                         ErrorSeverity::Error },

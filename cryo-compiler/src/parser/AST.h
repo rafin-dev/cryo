@@ -6,7 +6,7 @@
 
 #include "Token.h"
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
     struct Node {
         virtual ~Node() = default;

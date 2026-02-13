@@ -1,12 +1,12 @@
 #include "cryopch.h"
-#include "Compiler.h"
+#include "Parser.h"
 
 #include "AstBuilder.h"
 #include "Lexer.h"
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
-    Compiler::Compiler(std::filesystem::path file, std::filesystem::path output)
+    Parser::Parser(std::filesystem::path file, std::filesystem::path output)
         : m_FilePath(std::move(file)), m_OutputFile(std::move(output)) {
         std::fstream file_stream(m_FilePath);
         std::stringstream stream;
@@ -14,7 +14,7 @@ namespace cryo::compiler {
         m_Source = std::make_shared<std::string>(stream.str());
     }
 
-    ErrorQueue Compiler::compile() const {
+    std::optional<std::unique_ptr<NodeBlock>> Parser::parse() const {
         ErrorQueue errors;
 
         auto lexer = Lexer(m_Source, m_FilePath);
@@ -25,8 +25,11 @@ namespace cryo::compiler {
         auto [ast_root, ast_errors] = ast_builder.build_tree();
         errors.push_ErrorQueue(ast_errors);
 
-        std::cout << node_to_string(ast_root.get()) << std::endl;
+        if (errors.get_severity() != ErrorSeverity::None) {
+            errors.log();
+            return {};
+        }
 
-        return errors;
+        return std::make_optional<std::unique_ptr<NodeBlock>>(std::move(ast_root));
     }
 }

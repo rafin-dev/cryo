@@ -3,7 +3,9 @@
 #include "AST.h"
 #include "Token.h"
 
-namespace cryo::compiler {
+#include <span>
+
+namespace cryo::parser {
 
     class AstBuilder {
     public:

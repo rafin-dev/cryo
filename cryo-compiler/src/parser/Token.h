@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
     enum class TokenType {
         IDENTIFIER, // ...

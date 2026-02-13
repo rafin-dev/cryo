@@ -1,15 +1,20 @@
+#include "cryopch.h"
 #include <iostream>
 #include <string>
 #include <print>
 
 #include <argparse/argparse.hpp>
 
-#include "compiler/AstBuilder.h"
-#include "compiler/Compiler.h"
-#include "compiler/Lexer.h"
+#include "parser/AstBuilder.h"
+#include "parser/parser.h"
+#include "parser/Lexer.h"
 #include "shared/Arguments.h"
+#include "runtime/CryoContext.h"
 
 int main(const int argc, const char ** argv) {
+    cryo::runtime::CryoContext("../../../../cryo-compiler/examples/hello_world.cryo").run("main");
+    return 0;
+
     const cryo::Arguments args(argc, argv);
 
     for (auto& file : args.SourceFiles) {
@@ -22,8 +27,12 @@ int main(const int argc, const char ** argv) {
             return -1;
         }
 
-        std::cout << "[Compiling source file: '" << file << "']" << std::endl;
-        auto compiler = cryo::compiler::Compiler(file, std::filesystem::path());
-        compiler.compile().log();
+        auto result = cryo::parser::Parser(file, std::filesystem::path()).parse();
+        if (!result.has_value()) {
+            std::cerr << "Failed to parse!" << std::endl;
+            return -1;
+        }
+
+        // return cryo::runtime::Runtime(std::move(result)).run();
     }
 }

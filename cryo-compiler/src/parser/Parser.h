@@ -1,18 +1,19 @@
 #pragma once
 
 #include "shared/Error.h"
+#include "AST.h"
 
 #include <string>
 #include <memory>
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
-    class Compiler {
+    class Parser {
     public:
-        Compiler(std::filesystem::path file, std::filesystem::path output);
-        ~Compiler() = default;
+        Parser(std::filesystem::path file, std::filesystem::path output);
+        ~Parser() = default;
 
-        [[nodiscard]] ErrorQueue compile() const;
+        std::optional<std::unique_ptr<NodeBlock>> parse() const;
 
     private:
         std::filesystem::path m_FilePath;

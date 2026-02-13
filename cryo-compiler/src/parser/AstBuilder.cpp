@@ -5,9 +5,9 @@
 #include <stack>
 #include <utility>
 
-#include "CompilerError.h"
+#include "ParserError.h"
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
     AstBuilder::AstBuilder(std::filesystem::path file, std::shared_ptr<std::vector<Token>> tokens, std::shared_ptr<std::string> source)
         : m_File(std::move(file)), m_Tokens(std::move(tokens)), m_Source(std::move(source)) {
@@ -26,7 +26,7 @@ namespace cryo::compiler {
             }
         }
 
-        return { std::move(node_block), std::move(m_ErrorQueue) };
+        return std::make_pair(std::move(node_block), std::move(m_ErrorQueue));
     }
 
     std::unique_ptr<FunctionDefinitionNode> AstBuilder::build_function_ast() {
@@ -440,7 +440,7 @@ namespace cryo::compiler {
             token = &peek();
         }
 
-        m_ErrorQueue.push_error<CompilerError>(error_code, error_message, m_File,
+        m_ErrorQueue.push_error<ParserError>(error_code, error_message, m_File,
                 token->LineNumber, *m_Source, token->IndexFromSource, token->lexeme.size());
     }
 

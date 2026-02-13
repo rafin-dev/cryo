@@ -3,9 +3,9 @@
 
 #include <utility>
 
-#include "CompilerError.h"
+#include "ParserError.h"
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
     Lexer::Lexer(std::shared_ptr<std::string> source, std::filesystem::path file)
         : m_File(std::move(file)), m_SrcCode(std::move(source)) {
@@ -177,7 +177,7 @@ namespace cryo::compiler {
     }
 
     void Lexer::push_error(std::string_view error_code, const std::string &error_message, const std::string_view highlight) {
-        m_ErrorQueue.push_error<CompilerError>(error_code,
+        m_ErrorQueue.push_error<ParserError>(error_code,
                     error_message, m_File, m_CurrentLine,
                     *m_SrcCode, highlight.data() - m_SrcCode->data(), highlight.size());
     }

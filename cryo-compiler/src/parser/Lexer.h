@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace cryo::compiler {
+namespace cryo::parser {
 
     class Lexer {
     public:
