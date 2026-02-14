@@ -1,4 +1,0 @@
-fn main() {
-   // var test: i32 = 10 * (20 + 5) / 2;
-   var test: i32 = 10;
-}
