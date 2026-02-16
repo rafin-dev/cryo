@@ -80,7 +80,11 @@ namespace cryo::parser {
         std::unique_ptr<ScopeNode> Body;
     };
 
-    struct IntegerLiteralNode : public Node {
+    struct LiteralNode : public Node {
+        ~LiteralNode() override = default;
+    };
+
+    struct IntegerLiteralNode : public LiteralNode {
         IntegerLiteralNode(Token integer)
             : Value(std::move(integer)) {
             if (Value.Type != TokenType::INT) {
@@ -92,7 +96,7 @@ namespace cryo::parser {
         Token Value;
     };
 
-    struct FloatLiteralNode : public Node {
+    struct FloatLiteralNode : public LiteralNode {
         FloatLiteralNode(Token f)
             : Value(std::move(f)) {
             if (Value.Type != TokenType::FLOAT) {
@@ -104,7 +108,18 @@ namespace cryo::parser {
         Token Value;
     };
 
-    struct StringLiteralNode : public Node {
+    struct CharLiteralNode : public LiteralNode {
+        CharLiteralNode(Token character)
+            : LexerToken(std::move(character)) {
+            Character = LexerToken.lexeme[0];
+        }
+        ~CharLiteralNode() override = default;
+
+        Token LexerToken;
+        char Character;
+    };
+
+    struct StringLiteralNode : public LiteralNode {
         StringLiteralNode(Token string)
             : Value(std::move(string)) {
             if (Value.Type != TokenType::STRING) {
@@ -116,7 +131,7 @@ namespace cryo::parser {
         Token Value;
     };
 
-    struct BoolLiteralNode : public Node {
+    struct BoolLiteralNode : public LiteralNode {
         BoolLiteralNode(Token b)
             : Value(b.Type == TokenType::TRUE ? true : false), LexerToken(std::move(b)) {
             if (LexerToken.Type != TokenType::TRUE && LexerToken.Type != TokenType::FALSE) {
@@ -127,6 +142,12 @@ namespace cryo::parser {
 
         bool Value;
         Token LexerToken;
+    };
+
+    struct PrintNode : public Node {
+        ~PrintNode() override = default;
+
+        std::unique_ptr<IdentifierNode> Value;
     };
 
 }

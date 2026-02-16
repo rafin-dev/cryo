@@ -67,8 +67,21 @@ namespace cryo::runtime {
 		if (m_Variables.size() < count) {
 			return false;
 		}
+		for (uint32_t i = 0; i < count; i++) {
+			m_CallStack.top().Variables.erase(m_Variables[m_Variables.size() - 1 - i].Name);
+		}
 		m_Variables.erase(m_Variables.end() - count, m_Variables.end());
 
 		return true;
+	}
+
+	const CryoStack::VariableData* CryoStack::get_var_data(const std::string& name)
+	{
+		auto ite = m_CallStack.top().Variables.find(name);
+		if (ite == m_CallStack.top().Variables.end()) {
+			return nullptr;
+		}
+
+		return &m_Variables[ite->second];
 	}
 }

@@ -48,9 +48,14 @@ namespace cryo::runtime {
 		}
 	}
 
-	TypeID get_type_from_string(const std::string& type)
+	std::optional<TypeID> get_type_from_string(const std::string& type)
 	{
-		return TypeID();
+		auto ite = s_BuiltInTypes.find(type);
+		if (ite == s_BuiltInTypes.end()) {
+			return {};
+		}
+
+		return ite->second;
 	}
 
 }

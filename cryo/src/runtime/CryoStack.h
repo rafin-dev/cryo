@@ -29,7 +29,6 @@ namespace cryo::runtime {
 		template<typename T>
 		T* get_variable_as_cpp_type(const std::string& name);
 
-	private:
 		struct VariableData {
 			TypeID Type = VOID;
 			std::string Name;
@@ -37,6 +36,9 @@ namespace cryo::runtime {
 			uint32_t Size = 0;
 		};
 
+		const VariableData* get_var_data(const std::string& name);
+
+	private:
 		struct CallStackEntry {
 			CallStackEntry() = default;
 
@@ -62,7 +64,7 @@ namespace cryo::runtime {
 			return nullptr;
 		}
 
-		return static_cast<T*>(m_Buffer.data() + var_data.Location);
+		return (T*)(m_Buffer.data() + var_data.Location);
 	}
 
 }

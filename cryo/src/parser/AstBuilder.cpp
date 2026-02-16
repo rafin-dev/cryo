@@ -57,12 +57,14 @@ namespace cryo::parser {
                     push_error(CE_INVALID_TOKEN, "Function parameters where never closed!");
                     return nullptr;
                 }
-            } else {
+            }
+            else {
                 push_error(CE_UNEXPECTED_END, "Function parameters where never closed!");
                 return nullptr;
             }
 
-        } else {
+        }
+        else {
             push_error(CE_UNEXPECTED_END, "Expected Parameters declaration after function identifier, found nothing!");
             return nullptr;
         }
@@ -70,7 +72,8 @@ namespace cryo::parser {
         // TODO: Return types
         if (auto body = build_function_body_ast(function_node->Identifier->Identifier.lexeme); body != nullptr) {
             function_node->Body = std::move(body);
-        } else {
+        }
+        else {
             return nullptr;
         }
 
@@ -90,35 +93,43 @@ namespace cryo::parser {
 
             while (peek().Type != TokenType::END_OF_FILE && !scope_stack.empty()) {
                 switch (const auto tk = advance(); tk.Type) {
-                    case TokenType::LEFT_BRACE: {
-                        auto* scope = dynamic_cast<ScopeNode*>(scope_stack.top()->Block.emplace_back(std::make_unique<ScopeNode>()).get());
-                        scope_stack.push(scope);
-                        break;
-                    }
+                case TokenType::LEFT_BRACE: {
+                    auto* scope = dynamic_cast<ScopeNode*>(scope_stack.top()->Block.emplace_back(std::make_unique<ScopeNode>()).get());
+                    scope_stack.push(scope);
+                    break;
+                }
 
-                    case TokenType::RIGHT_BRACE: {
-                        scope_stack.pop();
-                        break;
-                    }
+                case TokenType::RIGHT_BRACE: {
+                    scope_stack.pop();
+                    break;
+                }
 
-                    case TokenType::IDENTIFIER:
-                    case TokenType::INT:
-                    case TokenType::FLOAT:
-                    case TokenType::STRING: {
-                        if (auto node = build_expression_ast(); node != nullptr) {
-                            scope_stack.top()->Block.emplace_back(std::move(node));
-                        }
-                        break;
+                case TokenType::IDENTIFIER:
+                case TokenType::INT:
+                case TokenType::FLOAT:
+                case TokenType::STRING: {
+                    if (auto node = build_expression_ast(); node != nullptr) {
+                        scope_stack.top()->Block.emplace_back(std::move(node));
                     }
+                    break;
+                }
 
-                    case TokenType::VAR: {
-                        if (auto var_decl = build_variable_declaration_ast(); var_decl != nullptr) {
-                            scope_stack.top()->Block.emplace_back(std::move(var_decl));
-                        }
-                        break;
+                case TokenType::VAR: {
+                    if (auto var_decl = build_variable_declaration_ast(); var_decl != nullptr) {
+                        scope_stack.top()->Block.emplace_back(std::move(var_decl));
                     }
+                    break;
+                }
 
-                    case TokenType::SEMICOLON: break;
+                case TokenType::SEMICOLON: break;
+
+                    // Temporary
+                case TokenType::PRINT: {
+                    if (auto print = build_print_ast(); print != nullptr) {
+                        scope_stack.top()->Block.emplace_back(std::move(print));
+                    }
+                    break;
+                }
 
                     default: {
                         push_error(CE_INVALID_TOKEN,
@@ -308,12 +319,43 @@ namespace cryo::parser {
                 return op_node->Value != nullptr ? std::move(op_node) : nullptr;
             }
 
+            case TokenType::EQUAL: {
+                auto ass = std::make_unique<AssignmentOperation>();
+                ass->Operator = operator_token;
+                auto left = remove_useless_paren(std::span(tokens.data(), op));
+                if (left.size() != 1 || left[0].Type != TokenType::IDENTIFIER) {
+                    // TODO: Error
+                    return nullptr;
+                }
+                ass->LeftValue = std::make_unique<IdentifierNode>(left[0]);
+                ass->RightValue = build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
+                return ass;
+            }
 
             default: {
-                throw std::logic_error("Expected operator_token to be a non assignment operator!");
+                throw std::logic_error("Expected operator_token to be an operator!");
                 return nullptr;
             }
         }
+    }
+
+    std::unique_ptr<Node> AstBuilder::build_print_ast()
+    {
+        auto print_node = std::make_unique<PrintNode>();
+
+        auto id = advance();
+        if (id.Type != TokenType::IDENTIFIER) {
+            // This is temporary so its fine
+            throw std::logic_error("[print] requires a variable as a parameter");
+        }
+
+        print_node->Value = std::make_unique<IdentifierNode>(id);
+        if (advance().Type != TokenType::SEMICOLON) {
+            push_error(CE_INVALID_TOKEN, "Expected a semicolon!");
+            return nullptr;
+        }
+
+        return std::move(print_node);
     }
 
     std::optional<std::span<Token>> AstBuilder::get_expression_tokens() {
