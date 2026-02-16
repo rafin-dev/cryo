@@ -1,10 +1,10 @@
 fn main() {
    var test: i32 = 10;
-   {
-      var test2: f32 = 10.5;
-      print test2;
-      test2 = 4;
-      print test2;
-   }
+   var test2: i32 = 5;
+   print test + test2;
+
+   test = test * test2;
    print test;
+
+   print "Hello, World!";
 }

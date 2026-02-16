@@ -121,14 +121,16 @@ namespace cryo::parser {
 
     struct StringLiteralNode : public LiteralNode {
         StringLiteralNode(Token string)
-            : Value(std::move(string)) {
-            if (Value.Type != TokenType::STRING) {
+            : LexerToken(std::move(string)) {
+            if (LexerToken.Type != TokenType::STRING) {
                 throw std::runtime_error("StringLiteralNode cannot be created with non string token!");
             }
+            Value = std::string(LexerToken.lexeme.data() + 1, LexerToken.lexeme.size() - 2);
         }
         ~StringLiteralNode() override = default;
 
-        Token Value;
+        Token LexerToken;
+        std::string Value;
     };
 
     struct BoolLiteralNode : public LiteralNode {
@@ -147,7 +149,7 @@ namespace cryo::parser {
     struct PrintNode : public Node {
         ~PrintNode() override = default;
 
-        std::unique_ptr<IdentifierNode> Value;
+        std::unique_ptr<Node> Value;
     };
 
 }

@@ -342,18 +342,13 @@ namespace cryo::parser {
     std::unique_ptr<Node> AstBuilder::build_print_ast()
     {
         auto print_node = std::make_unique<PrintNode>();
+        advance();
 
-        auto id = advance();
-        if (id.Type != TokenType::IDENTIFIER) {
-            // This is temporary so its fine
-            throw std::logic_error("[print] requires a variable as a parameter");
-        }
-
-        print_node->Value = std::make_unique<IdentifierNode>(id);
-        if (advance().Type != TokenType::SEMICOLON) {
-            push_error(CE_INVALID_TOKEN, "Expected a semicolon!");
+        auto expr = build_expression_ast();
+        if (expr == nullptr) {
             return nullptr;
         }
+        print_node->Value = std::move(expr);
 
         return std::move(print_node);
     }

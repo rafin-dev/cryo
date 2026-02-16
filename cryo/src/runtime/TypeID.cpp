@@ -6,6 +6,7 @@ namespace cryo::runtime {
 	static std::unordered_map<std::string, TypeID> s_BuiltInTypes = {
 		{ "void", VOID },
 
+		{ "bool", BOOL },
 		{ "char", CHAR },
 		{ "u8", U8 },
 		{ "i8", I8 },
@@ -26,6 +27,7 @@ namespace cryo::runtime {
 		switch (type) {
 		case VOID: return 0;
 
+		case BOOL:
 		case CHAR:
 		case U8:
 		case I8: return sizeof(uint8_t);

@@ -30,6 +30,8 @@ namespace cryo::runtime {
 
 		std::optional<ExpressionResult> evaluate_expression(const parser::Node* node);
 		std::optional<ExpressionResult> evaluate_literal_node(const parser::LiteralNode* node);
+		std::optional<ExpressionResult> evaluate_identifier_node(const parser::IdentifierNode* node);
+		std::optional<ExpressionResult> evaluate_binary_operation(const parser::BinaryOperation* op);
 	};
 
 }

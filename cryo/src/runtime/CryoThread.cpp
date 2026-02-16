@@ -77,7 +77,7 @@ namespace cryo::runtime {
 	}
 
 #define GET_IF(ass_type, var, T) if (auto var = std::get_if<T>(&value)) { succes = true; \
- *m_Stack.get_variable_as_cpp_type<ass_type>(var_data->Name) = *var; break; }
+ *m_Stack.get_variable_as_cpp_type<ass_type>(var_data->Location) = *var; break; }
 
 	void CryoThread::execute_assignment_operation_node(const parser::AssignmentOperation* ass) {
 		auto var_data = m_Stack.get_var_data(ass->LeftValue->Identifier.lexeme);
@@ -304,20 +304,26 @@ namespace cryo::runtime {
 	}
 
 	void CryoThread::execute_print_node(const parser::PrintNode* print) {
-		auto var_data = m_Stack.get_var_data(print->Value->Identifier.lexeme);
-		if (var_data == nullptr) {
-			throw std::runtime_error("Unknown variable!");
+		auto result = evaluate_expression(print->Value.get());
+		if (!result.has_value()) {
+			throw std::runtime_error("Failed to evalueate expression!");
 		}
+		auto value = std::move(result.value());
 
-		std::cout << "print: ";
-		switch (var_data->Type) {
-		case I32:
-			std::cout << *m_Stack.get_variable_as_cpp_type<uint32_t>(print->Value->Identifier.lexeme);
-			break;
-
-		case F32:
-			std::cout << *m_Stack.get_variable_as_cpp_type<float>(print->Value->Identifier.lexeme);
-			break;
+		if (auto u32 = std::get_if<uint32_t>(&value)) {
+			std::cout << *u32;
+		}
+		else if (auto i32 = std::get_if<int32_t>(&value)) {
+			std::cout << *i32;
+		}
+		else if (auto f32 = std::get_if<float>(&value)) {
+			std::cout << *f32;
+		}
+		else if (auto b8 = std::get_if<bool>(&value)) {
+			std::cout << (*b8 ? "true" : "false");
+		}
+		else if (auto str = std::get_if<std::string>(&value)) {
+			std::cout << *str;
 		}
 		std::cout << std::endl;
 	}
@@ -326,6 +332,12 @@ namespace cryo::runtime {
 	{
 		if (CHECK_NODE_TYPE(lit, parser::LiteralNode, node)) {
 			return evaluate_literal_node(lit);
+		}
+		if (CHECK_NODE_TYPE(var, parser::IdentifierNode, node)) {
+			return evaluate_identifier_node(var);
+		}
+		if (CHECK_NODE_TYPE(bin_op, parser::BinaryOperation, node)) {
+			return evaluate_binary_operation(bin_op);
 		}
 
 		return {};
@@ -346,10 +358,157 @@ namespace cryo::runtime {
 			return ExpressionResult(character->Character);
 		}
 		else if (CHECK_NODE_TYPE(string, parser::StringLiteralNode, node)) {
-			return ExpressionResult(string->Value.lexeme);
+			return ExpressionResult(string->Value);
 		}
 
-		return std::optional<ExpressionResult>();
+		return {};
+	}
+
+	std::optional<ExpressionResult> CryoThread::evaluate_identifier_node(const parser::IdentifierNode* node)
+	{
+		auto var_data = m_Stack.get_var_data(node->Identifier.lexeme);
+		if (!var_data) {
+			return {};
+		}
+
+		switch (var_data->Type) {
+		case BOOL:
+			return *m_Stack.get_variable_as_cpp_type<bool>(var_data->Location);
+		case CHAR:
+			return *m_Stack.get_variable_as_cpp_type<char>(var_data->Location);
+		case U8:
+			return *m_Stack.get_variable_as_cpp_type<uint8_t>(var_data->Location);
+		case I8:
+			return *m_Stack.get_variable_as_cpp_type<int8_t>(var_data->Location);
+
+		case U16:
+			return *m_Stack.get_variable_as_cpp_type<uint16_t>(var_data->Location);
+		case I16:
+			return *m_Stack.get_variable_as_cpp_type<int16_t>(var_data->Location);
+
+		case U32:
+			return *m_Stack.get_variable_as_cpp_type<uint32_t>(var_data->Location);
+		case I32:
+			return *m_Stack.get_variable_as_cpp_type<int32_t>(var_data->Location);
+		case F32:
+			return *m_Stack.get_variable_as_cpp_type<float>(var_data->Location);
+
+		case U64:
+			return *m_Stack.get_variable_as_cpp_type<uint64_t>(var_data->Location);
+		case I64:
+			return *m_Stack.get_variable_as_cpp_type<int64_t>(var_data->Location);
+		case F64:
+			return *m_Stack.get_variable_as_cpp_type<double>(var_data->Location);
+		}
+	}
+
+
+#define CHECK_AND_EVALUATE(left, op, right_type, r) if (auto r = std::get_if<right_type>(&right)) { \
+return op((*left), (*r)); }
+
+	template<typename LEFT, typename op>
+	std::optional<ExpressionResult> operate_numeric_value(const ExpressionResult& left, const ExpressionResult& right) {
+		op operation;
+		if (auto left_value = std::get_if<LEFT>(&left)) {
+			CHECK_AND_EVALUATE(left_value, operation, uint8_t, ru8);
+			CHECK_AND_EVALUATE(left_value, operation, int8_t, ri8);
+							   
+			CHECK_AND_EVALUATE(left_value, operation, uint16_t, ru16);
+			CHECK_AND_EVALUATE(left_value, operation, int16_t, ri16);
+							   
+			CHECK_AND_EVALUATE(left_value, operation, uint32_t, ru32);
+			CHECK_AND_EVALUATE(left_value, operation, int32_t, ri32);
+			CHECK_AND_EVALUATE(left_value, operation, float, rf32);
+							   
+			CHECK_AND_EVALUATE(left_value, operation, uint64_t, ru64);
+			CHECK_AND_EVALUATE(left_value, operation, int64_t, ri64);
+			CHECK_AND_EVALUATE(left_value, operation, double, rf64);
+		}
+		return {};
+	}
+	
+#define OPERATE_NUMERIC(LEFT_TYPE, left, op) if (auto left = operate_numeric_value<LEFT_TYPE, op<LEFT_TYPE>>(left_value, right_value)) { return left; }
+
+	std::optional<ExpressionResult> CryoThread::evaluate_binary_operation(const parser::BinaryOperation* op)
+	{
+		auto left_result = evaluate_expression(op->LeftValue.get());
+		auto& operation = op->Operator;
+		auto right_result = evaluate_expression(op->RightValue.get());
+		if (!left_result.has_value() || !right_result.has_value()) {
+			return {};
+		}
+
+		auto left_value = std::move(left_result.value());
+		auto right_value = std::move(right_result.value());
+
+		switch (operation.Type) {
+		case parser::TokenType::PLUS: {
+			OPERATE_NUMERIC(uint8_t, u8, std::plus);
+			OPERATE_NUMERIC(int8_t, i8, std::plus);
+
+			OPERATE_NUMERIC(uint16_t, u16, std::plus);
+			OPERATE_NUMERIC(int16_t, i16, std::plus);
+
+			OPERATE_NUMERIC(uint32_t, u32, std::plus);
+			OPERATE_NUMERIC(int32_t, i32, std::plus);
+			OPERATE_NUMERIC(uint8_t, f32, std::plus);
+
+			OPERATE_NUMERIC(uint64_t, u64, std::plus);
+			OPERATE_NUMERIC(int64_t, i64, std::plus);
+			OPERATE_NUMERIC(double, f64, std::plus);
+			break;
+		}
+		case parser::TokenType::MINUS: {
+			OPERATE_NUMERIC(uint8_t, u8, std::minus);
+			OPERATE_NUMERIC(int8_t, i8, std::minus);
+
+			OPERATE_NUMERIC(uint16_t, u16, std::minus);
+			OPERATE_NUMERIC(int16_t, i16, std::minus);
+
+			OPERATE_NUMERIC(uint32_t, u32, std::minus);
+			OPERATE_NUMERIC(int32_t, i32, std::minus);
+			OPERATE_NUMERIC(uint8_t, f32, std::minus);
+
+			OPERATE_NUMERIC(uint64_t, u64, std::minus);
+			OPERATE_NUMERIC(int64_t, i64, std::minus);
+			OPERATE_NUMERIC(double, f64, std::minus);
+			break;
+		}
+		case parser::TokenType::ASTERISK: {
+			OPERATE_NUMERIC(uint8_t, u8, std::multiplies);
+			OPERATE_NUMERIC(int8_t, i8, std::multiplies);
+
+			OPERATE_NUMERIC(uint16_t, u16, std::multiplies);
+			OPERATE_NUMERIC(int16_t, i16, std::multiplies);
+
+			OPERATE_NUMERIC(uint32_t, u32, std::multiplies);
+			OPERATE_NUMERIC(int32_t, i32, std::multiplies);
+			OPERATE_NUMERIC(uint8_t, f32, std::multiplies);
+
+			OPERATE_NUMERIC(uint64_t, u64, std::multiplies);
+			OPERATE_NUMERIC(int64_t, i64, std::multiplies);
+			OPERATE_NUMERIC(double, f64, std::multiplies);
+			break;
+		}
+		case parser::TokenType::SLASH: {
+			OPERATE_NUMERIC(uint8_t, u8, std::divides);
+			OPERATE_NUMERIC(int8_t, i8, std::divides);
+
+			OPERATE_NUMERIC(uint16_t, u16, std::divides);
+			OPERATE_NUMERIC(int16_t, i16, std::divides);
+
+			OPERATE_NUMERIC(uint32_t, u32, std::divides);
+			OPERATE_NUMERIC(int32_t, i32, std::divides);
+			OPERATE_NUMERIC(uint8_t, f32, std::divides);
+
+			OPERATE_NUMERIC(uint64_t, u64, std::divides);
+			OPERATE_NUMERIC(int64_t, i64, std::divides);
+			OPERATE_NUMERIC(double, f64, std::divides);
+			break;
+		}
+		}
+
+		return {};
 	}
 
 }

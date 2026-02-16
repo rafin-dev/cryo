@@ -29,6 +29,9 @@ namespace cryo::runtime {
 		template<typename T>
 		T* get_variable_as_cpp_type(const std::string& name);
 
+		template<typename T>
+		T* get_variable_as_cpp_type(uint32_t location);
+
 		struct VariableData {
 			TypeID Type = VOID;
 			std::string Name;
@@ -65,6 +68,15 @@ namespace cryo::runtime {
 		}
 
 		return (T*)(m_Buffer.data() + var_data.Location);
+	}
+
+	template<typename T>
+	inline T* CryoStack::get_variable_as_cpp_type(uint32_t location)
+	{
+		if ((location + sizeof(T)) >= m_Buffer.size()) {
+			throw std::runtime_error("Invalid access");
+		}
+		return (T*)(m_Buffer.data() + location);
 	}
 
 }
