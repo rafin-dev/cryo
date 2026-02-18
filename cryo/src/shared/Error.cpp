@@ -14,9 +14,6 @@ namespace cryo {
     }
 
     void ErrorQueue::clean() {
-        for (const auto err : m_Errors) {
-            delete err;
-        }
         m_Errors.clear();
     }
 

@@ -26,7 +26,7 @@ namespace cryo::parser {
             }
         }
 
-        return std::make_pair(std::move(node_block), std::move(m_ErrorQueue));
+        return std::make_pair(std::move(node_block), m_ErrorQueue);
     }
 
     std::unique_ptr<FunctionDefinitionNode> AstBuilder::build_function_ast() {
@@ -43,7 +43,7 @@ namespace cryo::parser {
         auto function_node = std::make_unique<FunctionDefinitionNode>();
         function_node->Identifier = std::make_unique<IdentifierNode>(id);
 
-        if (const auto open_param = advance(); open_param.Type != TokenType::END_OF_FILE) {
+        if (const auto& open_param = advance(); open_param.Type != TokenType::END_OF_FILE) {
             if (open_param.Type != TokenType::LEFT_PAREN) {
                 push_error(CE_UNEXPECTED_END, "Expected Parameters declaration after function identifier, missing '('!");
                 return nullptr;
@@ -81,74 +81,80 @@ namespace cryo::parser {
     }
 
     std::unique_ptr<ScopeNode> AstBuilder::build_function_body_ast(const std::string& id) {
-        auto body = std::make_unique<ScopeNode>();
-        std::stack<ScopeNode*> scope_stack;
-        scope_stack.push(body.get());
-
         if (const auto open_brace = advance(); open_brace.Type != TokenType::END_OF_FILE) {
             if (open_brace.Type != TokenType::LEFT_BRACE) {
                 push_error(CE_INVALID_TOKEN, std::format("Function {} body was never opened!", id));
                 return nullptr;
             }
 
-            while (peek().Type != TokenType::END_OF_FILE && !scope_stack.empty()) {
-                switch (const auto tk = advance(); tk.Type) {
-                case TokenType::LEFT_BRACE: {
-                    auto* scope = dynamic_cast<ScopeNode*>(scope_stack.top()->Block.emplace_back(std::make_unique<ScopeNode>()).get());
-                    scope_stack.push(scope);
-                    break;
-                }
+            return build_scope_node();
 
-                case TokenType::RIGHT_BRACE: {
-                    scope_stack.pop();
-                    break;
-                }
-
-                case TokenType::IDENTIFIER:
-                case TokenType::INT:
-                case TokenType::FLOAT:
-                case TokenType::STRING: {
-                    if (auto node = build_expression_ast(); node != nullptr) {
-                        scope_stack.top()->Block.emplace_back(std::move(node));
-                    }
-                    break;
-                }
-
-                case TokenType::VAR: {
-                    if (auto var_decl = build_variable_declaration_ast(); var_decl != nullptr) {
-                        scope_stack.top()->Block.emplace_back(std::move(var_decl));
-                    }
-                    break;
-                }
-
-                case TokenType::SEMICOLON: break;
-
-                    // Temporary
-                case TokenType::PRINT: {
-                    if (auto print = build_print_ast(); print != nullptr) {
-                        scope_stack.top()->Block.emplace_back(std::move(print));
-                    }
-                    break;
-                }
-
-                    default: {
-                        push_error(CE_INVALID_TOKEN,
-                            std::format("Unexpected token of type {} in function: {}!", TokenType_to_string(peek().Type), id));
-                        return nullptr;
-                    };
-                }
-            }
-
-            if (!scope_stack.empty()) {
-                push_error(CE_UNFINISHED_SCOPE, std::format("Function {}'s body was never closed!", id));
-                return nullptr;
-            }
-
-        } else {
-            push_error(CE_UNEXPECTED_END, std::format("Function {} Missing body!", id));
-            return nullptr;
         }
-        advance();
+        push_error(CE_UNEXPECTED_END, std::format("Function {} Missing body!", id));
+        return nullptr;
+    }
+
+    std::unique_ptr<ScopeNode> AstBuilder::build_scope_node()
+    {
+        auto body = std::make_unique<ScopeNode>();
+        std::stack<ScopeNode*> scope_stack;
+        scope_stack.push(body.get());
+
+        while (advance().Type != TokenType::END_OF_FILE && !scope_stack.empty()) {
+            switch (peek().Type) {
+            case TokenType::LEFT_BRACE: {
+                auto* scope = dynamic_cast<ScopeNode*>
+                    (scope_stack.top()->Block.emplace_back(std::make_unique<ScopeNode>()).get());
+                scope_stack.push(scope);
+                break;
+            }
+
+            case TokenType::RIGHT_BRACE: {
+                scope_stack.pop();
+                break;
+            }
+
+            case TokenType::IDENTIFIER:
+            case TokenType::INT:
+            case TokenType::FLOAT:
+            case TokenType::STRING: {
+                if (auto node = build_expression_ast(); node != nullptr) {
+                    scope_stack.top()->Block.emplace_back(std::move(node));
+                }
+                break;
+            }
+
+            case TokenType::VAR: {
+                if (auto var_decl = build_variable_declaration_ast(); var_decl != nullptr) {
+                    scope_stack.top()->Block.emplace_back(std::move(var_decl));
+                }
+                break;
+            }
+
+            case TokenType::IF: {
+                if (auto if_state = build_if_statement_node(); if_state != nullptr) {
+                    scope_stack.top()->Block.emplace_back(std::move(if_state));
+                }
+                break;
+            }
+
+            case TokenType::SEMICOLON: break;
+
+                // Temporary
+            case TokenType::PRINT: {
+                if (auto print = build_print_ast(); print != nullptr) {
+                    scope_stack.top()->Block.emplace_back(std::move(print));
+                }
+                break;
+            }
+
+            default: {
+                push_error(CE_INVALID_TOKEN,
+                    std::format("Unexpected token of type {}!", TokenType_to_string(peek().Type)));
+                return nullptr;
+            };
+            }
+        }
 
         return body;
     }
@@ -232,15 +238,15 @@ namespace cryo::parser {
         return nullptr;
     }
 
-    std::span<Token> remove_useless_paren(const std::span<Token>& expr) {
-        std::span<Token> s = expr;
+    std::span<const Token> remove_useless_paren(const std::span<const Token>& expr) {
+        std::span<const Token> s = expr;
         while (s.begin()->Type == TokenType::LEFT_PAREN && s[s.size() - 1].Type == TokenType::RIGHT_PAREN) {
             s = std::span(expr.data() + 1, expr.size() - 2);
         }
         return s;
     }
 
-    std::unique_ptr<Node> AstBuilder::build_expression_component_ast(std::span<Token> tokens) {
+    std::unique_ptr<Node> AstBuilder::build_expression_component_ast(std::span<const Token> tokens) {
         if (tokens.size() == 1) {
             switch (tokens.begin()->Type) {
                 case TokenType::IDENTIFIER: {
@@ -276,7 +282,21 @@ namespace cryo::parser {
 
         switch (const Token& operator_token = tokens[op]; operator_token.Type) {
             // Binary operators
-            case TokenType::MINUS:
+            case TokenType::MINUS: {
+                if (op == 0) { // Minus with no left value means: 0 - right_value
+                    auto op_node = std::make_unique<BinaryOperation>();
+                    op_node->Operator = operator_token;
+                    op_node->LeftValue = std::make_unique<FloatLiteralNode>(Token{"0", 0, 0, TokenType::FLOAT});
+                    op_node->RightValue = build_expression_component_ast(
+                        remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1))
+                    );
+                    if (op_node->RightValue == nullptr) {
+                        return nullptr;
+                    }
+                    
+                    return op_node;
+                }
+            }
             case TokenType::PLUS:
             case TokenType::SLASH:
             case TokenType::ASTERISK:
@@ -298,7 +318,8 @@ namespace cryo::parser {
                 auto op_node = std::make_unique<BinaryOperation>();
                 op_node->Operator = operator_token;
                 op_node->LeftValue = build_expression_component_ast(remove_useless_paren(std::span(tokens.data(), op)));
-                op_node->RightValue = build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
+                op_node->RightValue = 
+                    build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
                 if (op_node->LeftValue == nullptr || op_node->RightValue == nullptr) {
                     return nullptr;
                 }
@@ -337,6 +358,74 @@ namespace cryo::parser {
                 return nullptr;
             }
         }
+    }
+
+    std::unique_ptr<Node> AstBuilder::build_if_statement_node()
+    {
+        auto if_then_else = std::make_unique<IfThenElseNode>();
+
+        auto& open_param = advance();
+        if (open_param.Type != TokenType::LEFT_PAREN) {
+            push_error(CE_UNEXPECTED_TOKEN, "if Statement expects a condition in between parenthesis!");
+            return nullptr;
+        }
+
+        uint32_t paren_count = 1;
+        uint32_t expr_size = 0;
+        while (advance().Type != TokenType::END_OF_FILE) {
+            if (peek().Type == TokenType::LEFT_PAREN) {
+                paren_count++;
+            }
+            else if (peek().Type == TokenType::RIGHT_PAREN) {
+                paren_count--;
+            }
+
+            if (paren_count == 0) {
+                break;
+            }
+
+            expr_size++;
+        }
+        if (paren_count != 0) {
+            push_error(CE_UNEXPECTED_END, "Unclosed condition for if statement!", &open_param);
+        }
+        advance();
+
+        if_then_else->Condition = build_expression_component_ast(std::span(&open_param + 1, expr_size));
+        if (if_then_else->Condition == nullptr) {
+            return nullptr;
+        }
+        
+        if (peek().Type != TokenType::LEFT_BRACE) {
+            push_error(CE_UNEXPECTED_TOKEN, "if statement missing body!");
+            return nullptr;
+        }
+
+        if_then_else->IF = build_scope_node();
+        if (if_then_else->IF == nullptr) {
+            return nullptr;
+        }
+
+        if (peek().Type != TokenType::ELSE) {
+            return if_then_else;
+        }
+
+        if (advance().Type == TokenType::IF) {
+            if_then_else->ELSE = build_if_statement_node();
+        }
+        else if (peek().Type == TokenType::LEFT_BRACE) {
+            if_then_else->ELSE = build_scope_node();
+        }
+        else {
+            push_error(CE_UNEXPECTED_TOKEN, "else statment missing body!");
+            return nullptr;
+        }
+
+        if (if_then_else->ELSE == nullptr) {
+            return nullptr;
+        }
+
+        return if_then_else;
     }
 
     std::unique_ptr<Node> AstBuilder::build_print_ast()
@@ -402,9 +491,6 @@ namespace cryo::parser {
         // Bitwise OR
         { TokenType::OR, 3 },
 
-        // Bitwise XOR
-        { TokenType::XOR, 4 },
-
         // Bitwise AND
         { TokenType::AND, 5 },
 
@@ -431,7 +517,7 @@ namespace cryo::parser {
         { TokenType::BANG, 10 },
     };
 
-    std::optional<uint32_t> AstBuilder::get_least_priority_operator(const std::span<Token> expression) {
+    std::optional<uint32_t> AstBuilder::get_least_priority_operator(const std::span<const Token> expression) {
         uint32_t current_paren_level = 0;
 
         bool found_op = false;

@@ -18,11 +18,11 @@ namespace cryo::parser {
         ErrorQueue errors;
 
         auto lexer = Lexer(m_Source, m_FilePath);
-        auto [tokens, lexer_errors] = lexer.get_tokens();
+        auto&& [tokens, lexer_errors] = lexer.get_tokens();
         errors.push_ErrorQueue(lexer_errors);
 
         auto ast_builder = AstBuilder(m_FilePath, tokens, m_Source);
-        auto [ast_root, ast_errors] = ast_builder.build_tree();
+        auto&& [ast_root, ast_errors] = ast_builder.build_tree();
         errors.push_ErrorQueue(ast_errors);
 
         if (errors.get_severity() != ErrorSeverity::None) {

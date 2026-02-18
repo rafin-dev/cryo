@@ -80,6 +80,14 @@ namespace cryo::parser {
         std::unique_ptr<ScopeNode> Body;
     };
 
+    struct IfThenElseNode : public Node {
+        ~IfThenElseNode() override = default;
+
+        std::unique_ptr<Node> Condition;
+        std::unique_ptr<Node> IF;
+        std::unique_ptr<Node> ELSE;
+    };
+
     struct LiteralNode : public Node {
         ~LiteralNode() override = default;
     };

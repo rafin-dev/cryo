@@ -57,12 +57,11 @@ namespace cryo::parser {
             SINGLE_CHAR_TOKEN('%', TokenType::REMAINDER)
             SINGLE_CHAR_TOKEN(';', TokenType::SEMICOLON)
             SINGLE_CHAR_TOKEN(':', TokenType::COLON)
-            SINGLE_CHAR_TOKEN('^', TokenType::XOR)
 
             TWO_CHAR_TOKEN('!', '=', TokenType::BANG, TokenType::BANG_EQUAL)
             TWO_CHAR_TOKEN('=', '=', TokenType::EQUAL, TokenType::EQUAL_EQUAL)
             TWO_CHAR_TOKEN('>', '=', TokenType::GREATER, TokenType::GREATER_EQUAL)
-            TWO_CHAR_TOKEN('<', '<', TokenType::LESS, TokenType::LESS_EQUAL)
+            TWO_CHAR_TOKEN('<', '=', TokenType::LESS, TokenType::LESS_EQUAL)
             TWO_CHAR_TOKEN('&', '&', TokenType::AND, TokenType::AND_AND)
             TWO_CHAR_TOKEN('|', '|', TokenType::OR, TokenType::OR_OR)
 
@@ -76,9 +75,9 @@ namespace cryo::parser {
             }
 
             case '/': {
+                uint32_t start = current_char;
                 current_char++;
                 if (current_char < m_SrcCode->size() && m_SrcCode->at(current_char) == '/') {
-                    uint32_t start = current_char;
                     for (current_char++; current_char < m_SrcCode->size(); current_char++) {
                         if (m_SrcCode->at(current_char) == '\n') {
                             m_CurrentLine++;
@@ -191,6 +190,7 @@ namespace cryo::parser {
         { "false",        TokenType::FALSE },
         { "for",          TokenType::FOR },
         { "while",        TokenType::WHILE },
+        { "loop",         TokenType::LOOP },
         { "class",        TokenType::CLASS },
         { "this",         TokenType::THIS },
         { "return",       TokenType::RETURN },

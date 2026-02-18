@@ -16,14 +16,13 @@ namespace cryo::parser {
         LESS, LESS_EQUAL, // < <=
         AND, AND_AND, // & &&
         OR, OR_OR, // | ||
-        XOR,
 
         RETURN_TYPE, // ->
 
         STRING, INT, FLOAT, // "*" [1/2/3...] *.*
 
         // Self-explanatory
-        FN, VAR, IF, ELSE, TRUE, FALSE, FOR, WHILE,
+        FN, VAR, IF, ELSE, TRUE, FALSE, FOR, WHILE, LOOP,
         CLASS, THIS, RETURN, PRINT,
 
         END_OF_FILE
@@ -53,11 +52,8 @@ namespace cryo::parser {
             case TokenType::GREATER_EQUAL: return ">=";
             case TokenType::LESS: return "<";
             case TokenType::LESS_EQUAL: return "<=";
-            case TokenType::AND: return "&";
             case TokenType::AND_AND: return "&&";
-            case TokenType::OR: return "|";
             case TokenType::OR_OR: return "||";
-            case TokenType::XOR: return "^";
             case TokenType::RETURN_TYPE: return "->";
             case TokenType::STRING: return "String";
             case TokenType::INT: return "Integer";

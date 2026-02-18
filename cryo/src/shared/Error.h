@@ -35,10 +35,10 @@ namespace cryo {
         void push_error(Args&&... args) {
             static_assert(std::is_base_of_v<Error, ErrorType>);
 
-            m_Errors.push_back(new ErrorType(std::forward<Args>(args)...));
+            m_Errors.push_back(std::make_shared<ErrorType>(std::forward<Args>(args)...));
         }
 
     private:
-        std::vector<Error*> m_Errors;
+        std::vector<std::shared_ptr<Error>> m_Errors;
     };
 }
