@@ -23,7 +23,9 @@ namespace cryo::parser {
                 if (auto func = build_function_ast(); func != nullptr) {
                     node_block->Block.emplace_back(std::move(func));
                 }
+                continue;
             }
+            advance();
         }
 
         return std::make_pair(std::move(node_block), m_ErrorQueue);
@@ -138,6 +140,13 @@ namespace cryo::parser {
                 break;
             }
 
+            case TokenType::WHILE: {
+                if (auto while_state = build_while_statement_node(); while_state != nullptr) {
+                    scope_stack.top()->Block.emplace_back(std::move(while_state));
+                }
+                break;
+            }
+
             case TokenType::SEMICOLON: break;
 
                 // Temporary
@@ -155,6 +164,7 @@ namespace cryo::parser {
             };
             }
         }
+        retreat();
 
         return body;
     }
@@ -405,6 +415,7 @@ namespace cryo::parser {
         if (if_then_else->IF == nullptr) {
             return nullptr;
         }
+        advance();
 
         if (peek().Type != TokenType::ELSE) {
             return if_then_else;
@@ -426,6 +437,54 @@ namespace cryo::parser {
         }
 
         return if_then_else;
+    }
+
+    std::unique_ptr<Node> AstBuilder::build_while_statement_node() {
+        auto while_state = std::make_unique<WhileNode>();
+
+        auto& open_param = advance();
+        if (open_param.Type != TokenType::LEFT_PAREN) {
+            push_error(CE_UNEXPECTED_TOKEN, "while Statement expects a condition in between parenthesis!");
+            return nullptr;
+        }
+
+        uint32_t paren_count = 1;
+        uint32_t expr_size = 0;
+        while (advance().Type != TokenType::END_OF_FILE) {
+            if (peek().Type == TokenType::LEFT_PAREN) {
+                paren_count++;
+            }
+            else if (peek().Type == TokenType::RIGHT_PAREN) {
+                paren_count--;
+            }
+
+            if (paren_count == 0) {
+                break;
+            }
+
+            expr_size++;
+        }
+        if (paren_count != 0) {
+            push_error(CE_UNEXPECTED_END, "Unclosed condition for while statement!", &open_param);
+        }
+        advance();
+
+        while_state->Condition = build_expression_component_ast(std::span(&open_param + 1, expr_size));
+        if (while_state->Condition == nullptr) {
+            return nullptr;
+        }
+
+        if (peek().Type != TokenType::LEFT_BRACE) {
+            push_error(CE_UNEXPECTED_TOKEN, "while statement missing body!");
+            return nullptr;
+        }
+
+        while_state->Body = build_scope_node();
+        if (while_state->Body == nullptr) {
+            return nullptr;
+        }
+
+        return while_state;
     }
 
     std::unique_ptr<Node> AstBuilder::build_print_ast()

@@ -38,6 +38,9 @@ namespace cryo::runtime {
 		else if (CHECK_NODE_TYPE(ite, parser::IfThenElseNode, node)) {
 			execute_if_then_else_node(ite);
 		}
+		else if (CHECK_NODE_TYPE(wl, parser::WhileNode, node)) {
+			execute_while_loop(wl);
+		}
 	}
 
 	void CryoThread::execute_scope_node(const parser::ScopeNode* scope) {
@@ -307,26 +310,32 @@ namespace cryo::runtime {
 	}
 
 	void CryoThread::execute_if_then_else_node(const parser::IfThenElseNode* ite) {
-		auto condition_result = evaluate_expression(ite->Condition.get());
-		if (!condition_result) {
-			throw std::runtime_error("Failed to evaluate if statement condition!");
+		auto result = evaluate_condition(ite->Condition.get());
+
+		if (!result.has_value()) {
+			throw std::runtime_error("Failed to evaluate condition!");
 		}
 
-		bool condition_boolean = false;
-		auto condition = std::move(condition_result.value());
-
-		if (auto boolean = std::get_if<bool>(&condition)) {
-			condition_boolean = *boolean;
-		}
-		else {
-			throw std::runtime_error("if statement expects a logical expression for the condition!");
-		}
-
-		if (condition_boolean) {
+		if (result.value()) {
 			execute_node(ite->IF.get());
 		}
 		else {
 			execute_node(ite->ELSE.get());
+		}
+	}
+
+	void CryoThread::execute_while_loop(const parser::WhileNode* wl) {
+		while (true) {
+			auto result = evaluate_condition(wl->Condition.get());
+
+			if (!result.has_value()) {
+				throw std::runtime_error("Failed to evaluate condition!");
+			}
+			if (!result.value()) {
+				break;
+			}
+
+			execute_node(wl->Body.get());
 		}
 	}
 
@@ -353,6 +362,19 @@ namespace cryo::runtime {
 			std::cout << *str;
 		}
 		std::cout << std::endl;
+	}
+
+	std::optional<bool> CryoThread::evaluate_condition(const parser::Node* node) {
+		auto result = evaluate_expression(node);
+		if (!result.has_value()) {
+			return {};
+		}
+
+		if (auto bptr = std::get_if<bool>(&result.value())) {
+			return *bptr;
+		}
+
+		return {};
 	}
 
 	std::optional<ExpressionResult> CryoThread::evaluate_expression(const parser::Node* node)

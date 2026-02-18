@@ -88,6 +88,13 @@ namespace cryo::parser {
         std::unique_ptr<Node> ELSE;
     };
 
+    struct WhileNode : public Node {
+        ~WhileNode() override = default;
+
+        std::unique_ptr<Node> Condition;
+        std::unique_ptr<Node> Body;
+    };
+
     struct LiteralNode : public Node {
         ~LiteralNode() override = default;
     };

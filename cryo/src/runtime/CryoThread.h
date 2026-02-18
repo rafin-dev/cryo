@@ -26,8 +26,11 @@ namespace cryo::runtime {
 		void execute_variable_declaration_node(const parser::VariableDeclarationNode* var);
 		void execute_assignment_operation_node(const parser::AssignmentOperation* ass);
 		void execute_if_then_else_node(const parser::IfThenElseNode* ite);
+		void execute_while_loop(const parser::WhileNode* wl);
 
 		void execute_print_node(const parser::PrintNode* print);
+
+		std::optional<bool> evaluate_condition(const parser::Node* node);
 
 		std::optional<ExpressionResult> evaluate_expression(const parser::Node* node);
 		std::optional<ExpressionResult> evaluate_literal_node(const parser::LiteralNode* node);
