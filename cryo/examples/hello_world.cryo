@@ -8,15 +8,22 @@ fn main() {
 
    var i: i32 = 0;
    while (i < 3) {
-      print i;
       i = i + 1;
+      print i == 2;
+      if (i == 2) {
+         print "eureka!";
+         break;
+      }
+      print i;
    }
 
    if (test == test2) {
       print "Hello, World!";
-   } else if (test > test2) {
+   } 
+   else if (test > test2) {
       print "Goodbye world!";
-   } else {
+   } 
+   else {
       print "IDK";
    }
 

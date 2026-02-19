@@ -23,6 +23,7 @@ namespace cryo::parser {
 
         std::unique_ptr<Node> build_if_statement_node();
         std::unique_ptr<Node> build_while_statement_node();
+        std::unique_ptr<Node> build_return_statement_node();
 
         // Temporary
         std::unique_ptr<Node> build_print_ast();

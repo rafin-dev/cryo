@@ -23,7 +23,7 @@ namespace cryo::parser {
 
         // Self-explanatory
         FN, VAR, IF, ELSE, TRUE, FALSE, FOR, WHILE, LOOP,
-        CLASS, THIS, RETURN, PRINT,
+        CLASS, THIS, RETURN, PRINT, CONTINUE, BREAK,
 
         END_OF_FILE
     };
@@ -66,10 +66,13 @@ namespace cryo::parser {
             case TokenType::FALSE: return "false";
             case TokenType::FOR: return "for";
             case TokenType::WHILE: return "while";
+            case TokenType::LOOP: return "loop";
             case TokenType::CLASS: return "class";
             case TokenType::THIS: return "this";
             case TokenType::RETURN: return "return";
             case TokenType::PRINT: return "print";
+            case TokenType::CONTINUE: return "continue";
+            case TokenType::BREAK: return "break";
             case TokenType::END_OF_FILE: return "EOF";
 
             default:

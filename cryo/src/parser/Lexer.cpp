@@ -194,6 +194,8 @@ namespace cryo::parser {
         { "class",        TokenType::CLASS },
         { "this",         TokenType::THIS },
         { "return",       TokenType::RETURN },
+        { "continue",     TokenType::CONTINUE },
+        { "break",        TokenType::BREAK },
         { "print",        TokenType::PRINT }
     };
 }

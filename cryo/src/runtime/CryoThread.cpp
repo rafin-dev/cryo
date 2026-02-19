@@ -15,6 +15,9 @@ namespace cryo::runtime {
 	void CryoThread::run() {
 		m_Stack.push_function_call();
 		execute_node_block(m_Function->Body.get());
+		if (m_Flag != None && m_Flag != Return) {
+			throw std::runtime_error("break and continue need to be called from inside a loop!");
+		}
 	}
 
 #define CHECK_NODE_TYPE(var, Type, node) const auto* var = dynamic_cast<const Type*>(node); var != nullptr
@@ -41,6 +44,15 @@ namespace cryo::runtime {
 		else if (CHECK_NODE_TYPE(wl, parser::WhileNode, node)) {
 			execute_while_loop(wl);
 		}
+		else if (CHECK_NODE_TYPE(rt, parser::ReturnStatementNode, node)) {
+			execute_return_node(rt);
+		}
+		else if (CHECK_NODE_TYPE(ct, parser::ContinueStatementNode, node)) {
+			m_Flag = Continue;
+		}
+		else if (CHECK_NODE_TYPE(ct, parser::BreakStatementNode, node)) {
+			m_Flag = Break;
+		}
 	}
 
 	void CryoThread::execute_scope_node(const parser::ScopeNode* scope) {
@@ -52,6 +64,10 @@ namespace cryo::runtime {
 	void CryoThread::execute_node_block(const parser::NodeBlock* block) {
 		for (const auto& node : block->Block) {
 			execute_node(node.get());
+
+			if (m_Flag != None) {
+				return;
+			}
 		}
 	}
 
@@ -325,18 +341,44 @@ namespace cryo::runtime {
 	}
 
 	void CryoThread::execute_while_loop(const parser::WhileNode* wl) {
-		while (true) {
+		bool running = true;
+		while (running) {
 			auto result = evaluate_condition(wl->Condition.get());
 
 			if (!result.has_value()) {
 				throw std::runtime_error("Failed to evaluate condition!");
 			}
 			if (!result.value()) {
-				break;
+				running = false;
 			}
 
 			execute_node(wl->Body.get());
+
+			switch (m_Flag) {
+			case Continue:
+				m_Flag = None;
+				break;
+
+			case Break:
+				m_Flag = None;
+			case Return:
+				running = false;
+			}
 		}
+	}
+
+	void CryoThread::execute_return_node(const parser::ReturnStatementNode* return_statement) {
+		m_Flag = Return;
+		if (!return_statement->ReturnValue) {
+			return;
+		}
+
+		auto result = evaluate_expression(return_statement->ReturnValue.get());
+		if (!result.has_value()) {
+			throw std::runtime_error("Failed to evaluate expression!");
+		}
+
+		m_ReturnValue = std::move(result.value());
 	}
 
 	void CryoThread::execute_print_node(const parser::PrintNode* print) {

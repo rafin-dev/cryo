@@ -15,8 +15,18 @@ namespace cryo::runtime {
 		void run();
 
 	private:
+		enum RuntimeFlags {
+			None = 0,
+			Continue,
+			Break,
+			Return
+		};
+
 		const parser::FunctionDefinitionNode* m_Function;
 		CryoStack m_Stack;
+
+		RuntimeFlags m_Flag = None;
+		ExpressionResult m_ReturnValue;
 
 		void execute_node(const parser::Node* node);
 
@@ -27,6 +37,7 @@ namespace cryo::runtime {
 		void execute_assignment_operation_node(const parser::AssignmentOperation* ass);
 		void execute_if_then_else_node(const parser::IfThenElseNode* ite);
 		void execute_while_loop(const parser::WhileNode* wl);
+		void execute_return_node(const parser::ReturnStatementNode* return_statement);
 
 		void execute_print_node(const parser::PrintNode* print);
 

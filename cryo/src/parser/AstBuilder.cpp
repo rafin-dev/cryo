@@ -17,6 +17,7 @@ namespace cryo::parser {
         auto node_block = std::make_unique<NodeBlock>();
         m_CurrentToken = 0;
         m_ErrorQueue.clean();
+        m_Tokens;
 
         for (const Token* token = &peek(); token->Type != TokenType::END_OF_FILE; token = &peek()) {
             if (token->Type == TokenType::FN) {
@@ -72,6 +73,17 @@ namespace cryo::parser {
         }
 
         // TODO: Return types
+        if (peek_next().Type == TokenType::RETURN_TYPE) {
+            advance();
+
+            auto& return_type = advance();
+            if (return_type.Type != TokenType::IDENTIFIER) {
+                push_error(CE_UNEXPECTED_TOKEN, "Expected type identifier for the function return type!");
+                return nullptr;
+            }
+            function_node->ReturnType = std::make_unique<IdentifierNode>(return_type);
+        }
+
         if (auto body = build_function_body_ast(function_node->Identifier->Identifier.lexeme); body != nullptr) {
             function_node->Body = std::move(body);
         }
@@ -102,7 +114,7 @@ namespace cryo::parser {
         std::stack<ScopeNode*> scope_stack;
         scope_stack.push(body.get());
 
-        while (advance().Type != TokenType::END_OF_FILE && !scope_stack.empty()) {
+        while (!scope_stack.empty() && advance().Type != TokenType::END_OF_FILE) {
             switch (peek().Type) {
             case TokenType::LEFT_BRACE: {
                 auto* scope = dynamic_cast<ScopeNode*>
@@ -147,6 +159,31 @@ namespace cryo::parser {
                 break;
             }
 
+            case TokenType::RETURN: {
+                if (auto rt_st = build_return_statement_node(); rt_st != nullptr) {
+                    scope_stack.top()->Block.emplace_back(std::move(rt_st));
+                }
+                break;
+            }
+
+            case TokenType::CONTINUE: {
+                if (advance().Type != TokenType::SEMICOLON) {
+                    push_error(CE_UNEXPECTED_TOKEN, "continue statement does not take parameters!");
+                    break;
+                }
+                scope_stack.top()->Block.emplace_back(std::make_unique<ContinueStatementNode>());
+                break;
+            }
+
+            case TokenType::BREAK: {
+                if (advance().Type != TokenType::SEMICOLON) {
+                    push_error(CE_UNEXPECTED_TOKEN, "break statement does not take parameters!");
+                    break;
+                }
+                scope_stack.top()->Block.emplace_back(std::make_unique<BreakStatementNode>());
+                break;
+            }
+
             case TokenType::SEMICOLON: break;
 
                 // Temporary
@@ -164,7 +201,6 @@ namespace cryo::parser {
             };
             }
         }
-        retreat();
 
         return body;
     }
@@ -415,9 +451,9 @@ namespace cryo::parser {
         if (if_then_else->IF == nullptr) {
             return nullptr;
         }
-        advance();
 
-        if (peek().Type != TokenType::ELSE) {
+        if (advance().Type != TokenType::ELSE) {
+            retreat();
             return if_then_else;
         }
 
@@ -487,8 +523,21 @@ namespace cryo::parser {
         return while_state;
     }
 
-    std::unique_ptr<Node> AstBuilder::build_print_ast()
-    {
+    std::unique_ptr<Node> AstBuilder::build_return_statement_node() {
+        auto return_node = std::make_unique<ReturnStatementNode>();
+        if (advance().Type == TokenType::SEMICOLON) {
+            return return_node;
+        }
+
+        return_node->ReturnValue = build_expression_ast();
+        if (return_node->ReturnValue == nullptr) {
+            return nullptr;
+        }
+
+        return return_node;
+    }
+
+    std::unique_ptr<Node> AstBuilder::build_print_ast() {
         auto print_node = std::make_unique<PrintNode>();
         advance();
 
