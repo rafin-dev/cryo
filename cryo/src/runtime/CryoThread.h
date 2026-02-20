@@ -12,7 +12,7 @@ namespace cryo::runtime {
 		CryoThread(const parser::FunctionDefinitionNode* func);
 		~CryoThread();
 
-		void run();
+		void run(const std::vector<ExpressionResult>& param = {});
 
 	private:
 		enum RuntimeFlags {
@@ -37,9 +37,12 @@ namespace cryo::runtime {
 		void execute_assignment_operation_node(const parser::AssignmentOperation* ass);
 		void execute_if_then_else_node(const parser::IfThenElseNode* ite);
 		void execute_while_loop(const parser::WhileNode* wl);
+		void execute_loop(const parser::LoopNode* ln);
 		void execute_return_node(const parser::ReturnStatementNode* return_statement);
 
 		void execute_print_node(const parser::PrintNode* print);
+
+		uint64_t get_loop_count(ExpressionResult result);
 
 		std::optional<bool> evaluate_condition(const parser::Node* node);
 

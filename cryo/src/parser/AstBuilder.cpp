@@ -159,6 +159,13 @@ namespace cryo::parser {
                 break;
             }
 
+            case TokenType::LOOP: {
+                if (auto loop = build_loop_statement_node(); loop != nullptr) {
+                    scope_stack.top()->Block.emplace_back(std::move(loop));
+                }
+                break;
+            }
+
             case TokenType::RETURN: {
                 if (auto rt_st = build_return_statement_node(); rt_st != nullptr) {
                     scope_stack.top()->Block.emplace_back(std::move(rt_st));
@@ -416,28 +423,9 @@ namespace cryo::parser {
             return nullptr;
         }
 
-        uint32_t paren_count = 1;
-        uint32_t expr_size = 0;
-        while (advance().Type != TokenType::END_OF_FILE) {
-            if (peek().Type == TokenType::LEFT_PAREN) {
-                paren_count++;
-            }
-            else if (peek().Type == TokenType::RIGHT_PAREN) {
-                paren_count--;
-            }
+        auto condition = get_condition();
 
-            if (paren_count == 0) {
-                break;
-            }
-
-            expr_size++;
-        }
-        if (paren_count != 0) {
-            push_error(CE_UNEXPECTED_END, "Unclosed condition for if statement!", &open_param);
-        }
-        advance();
-
-        if_then_else->Condition = build_expression_component_ast(std::span(&open_param + 1, expr_size));
+        if_then_else->Condition = build_expression_component_ast(condition);
         if (if_then_else->Condition == nullptr) {
             return nullptr;
         }
@@ -484,28 +472,9 @@ namespace cryo::parser {
             return nullptr;
         }
 
-        uint32_t paren_count = 1;
-        uint32_t expr_size = 0;
-        while (advance().Type != TokenType::END_OF_FILE) {
-            if (peek().Type == TokenType::LEFT_PAREN) {
-                paren_count++;
-            }
-            else if (peek().Type == TokenType::RIGHT_PAREN) {
-                paren_count--;
-            }
+        auto condition = get_condition();
 
-            if (paren_count == 0) {
-                break;
-            }
-
-            expr_size++;
-        }
-        if (paren_count != 0) {
-            push_error(CE_UNEXPECTED_END, "Unclosed condition for while statement!", &open_param);
-        }
-        advance();
-
-        while_state->Condition = build_expression_component_ast(std::span(&open_param + 1, expr_size));
+        while_state->Condition = build_expression_component_ast(condition);
         if (while_state->Condition == nullptr) {
             return nullptr;
         }
@@ -521,6 +490,37 @@ namespace cryo::parser {
         }
 
         return while_state;
+    }
+
+    std::unique_ptr<Node> AstBuilder::build_loop_statement_node() {
+        auto loop = std::make_unique<LoopNode>();
+
+        auto& paren_or_brace = advance();
+
+        if (paren_or_brace.Type == TokenType::LEFT_PAREN) { // Loop has count
+            auto condition = get_condition();
+            loop->Count = build_expression_component_ast(condition);
+            if (loop->Count == nullptr) {
+                return nullptr;
+            }
+
+            auto& brace = peek();
+            if (brace.Type != TokenType::LEFT_BRACE) {
+                push_error(CE_UNEXPECTED_TOKEN, "loop statement missing body!");
+                return nullptr;
+            }
+
+            loop->Body = build_scope_node();
+            return loop->Body == nullptr ? nullptr : std::move(loop);
+        }
+
+        if (paren_or_brace.Type == TokenType::LEFT_BRACE) { // Infinte loop
+            loop->Body = build_scope_node();
+            return loop->Body == nullptr ? nullptr : std::move(loop);
+        }
+
+        push_error(CE_UNEXPECTED_TOKEN, "loop statement missing count and body!");
+        return nullptr;
     }
 
     std::unique_ptr<Node> AstBuilder::build_return_statement_node() {
@@ -548,6 +548,33 @@ namespace cryo::parser {
         print_node->Value = std::move(expr);
 
         return std::move(print_node);
+    }
+
+    std::span<const Token> AstBuilder::get_condition() {
+        auto& start = peek();
+        
+        uint32_t paren_count = 1;
+        uint32_t expr_size = 0;
+        while (advance().Type != TokenType::END_OF_FILE) {
+            if (peek().Type == TokenType::LEFT_PAREN) {
+                paren_count++;
+            }
+            else if (peek().Type == TokenType::RIGHT_PAREN) {
+                paren_count--;
+            }
+
+            if (paren_count == 0) {
+                break;
+            }
+
+            expr_size++;
+        }
+        if (paren_count != 0) {
+            push_error(CE_UNEXPECTED_END, "Unclosed condition!", &start);
+        }
+        advance();
+
+        return std::span(&start + 1, expr_size);
     }
 
     std::optional<std::span<Token>> AstBuilder::get_expression_tokens() {

@@ -109,6 +109,14 @@ namespace cryo::parser {
         std::unique_ptr<Node> Body;
     };
 
+    struct LoopNode : public Node {
+    public:
+        ~LoopNode() override = default;
+
+        std::unique_ptr<Node> Count;
+        std::unique_ptr<Node> Body;
+    };
+
     struct LiteralNode : public Node {
         ~LiteralNode() override = default;
     };

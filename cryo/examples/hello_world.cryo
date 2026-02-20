@@ -12,9 +12,14 @@ fn main() {
       print i == 2;
       if (i == 2) {
          print "eureka!";
-         break;
+         continue;
       }
       print i;
+   }
+
+   var count: u32 = 3;
+   loop (count) {
+      print "HI!";
    }
 
    if (test == test2) {

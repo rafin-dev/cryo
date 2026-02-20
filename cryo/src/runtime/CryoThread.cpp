@@ -12,7 +12,7 @@ namespace cryo::runtime {
 	CryoThread::~CryoThread() {
 	}
 
-	void CryoThread::run() {
+	void CryoThread::run(const std::vector<ExpressionResult>& param) {
 		m_Stack.push_function_call();
 		execute_node_block(m_Function->Body.get());
 		if (m_Flag != None && m_Flag != Return) {
@@ -43,6 +43,9 @@ namespace cryo::runtime {
 		}
 		else if (CHECK_NODE_TYPE(wl, parser::WhileNode, node)) {
 			execute_while_loop(wl);
+		}
+		else if (CHECK_NODE_TYPE(ln, parser::LoopNode, node)) {
+			execute_loop(ln);
 		}
 		else if (CHECK_NODE_TYPE(rt, parser::ReturnStatementNode, node)) {
 			execute_return_node(rt);
@@ -367,6 +370,35 @@ namespace cryo::runtime {
 		}
 	}
 
+	void CryoThread::execute_loop(const parser::LoopNode* ln) {
+		uint64_t count = 0;
+		uint64_t i = 0;
+
+		if (ln->Count != nullptr) {
+			auto expr = evaluate_expression(ln->Count.get());
+			if (!expr.has_value()) {
+				throw std::runtime_error("invalid loop count expression!");
+			}
+			count = get_loop_count(expr.value());
+		}
+		
+		while (ln->Count == nullptr || i < count) {
+			execute_node(ln->Body.get());
+			i++;
+
+			switch (m_Flag) {
+			case Continue:
+				m_Flag = None;
+				break;
+
+			case Break:
+				m_Flag = None;
+			case Return:
+				break;
+			}
+		}
+	}
+
 	void CryoThread::execute_return_node(const parser::ReturnStatementNode* return_statement) {
 		m_Flag = Return;
 		if (!return_statement->ReturnValue) {
@@ -404,6 +436,36 @@ namespace cryo::runtime {
 			std::cout << *str;
 		}
 		std::cout << std::endl;
+	}
+
+	uint64_t CryoThread::get_loop_count(ExpressionResult result)
+	{
+		if (auto u8 = std::get_if<uint8_t>(&result)) {
+			return *u8;
+		}
+		if (auto i8 = std::get_if<int8_t>(&result)) {
+			return *i8;
+		}
+		if (auto u16 = std::get_if<uint16_t>(&result)) {
+			return *u16;
+		}
+		if (auto i16 = std::get_if<int16_t>(&result)) {
+			return *i16;
+		}
+		if (auto u32 = std::get_if<uint32_t>(&result)) {
+			return *u32;
+		}
+		if (auto i32 = std::get_if<int32_t>(&result)) {
+			return *i32;
+		}
+		if (auto u64 = std::get_if<uint64_t>(&result)) {
+			return *u64;
+		}
+		if (auto i64 = std::get_if<int64_t>(&result)) {
+			return *i64;
+		}
+
+		throw std::runtime_error("loop condition needs to be an integer!");
 	}
 
 	std::optional<bool> CryoThread::evaluate_condition(const parser::Node* node) {
