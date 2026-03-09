@@ -71,6 +71,7 @@ namespace cryo::runtime {
 			m_CallStack.top().Variables.erase(m_Variables[m_Variables.size() - 1 - i].Name);
 		}
 		m_Variables.erase(m_Variables.end() - count, m_Variables.end());
+		m_CallStack.top().Scopes.pop();
 
 		return true;
 	}

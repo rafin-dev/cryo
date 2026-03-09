@@ -18,7 +18,7 @@ fn main() {
    }
 
    var count: u32 = 3;
-   loop (count) {
+   loop (count * 2) {
       print "HI!";
    }
 
@@ -35,4 +35,12 @@ fn main() {
    var o: f32 = -10.2;
    test = -1;
    print !false;
+
+   greet();
+}
+
+fn greet() {
+    var test: f32 = 10.5;
+    print "Hi, i'm a different function!";
+    print test;
 }

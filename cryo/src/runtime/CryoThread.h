@@ -7,9 +7,11 @@
 
 namespace cryo::runtime {
 
+	class CryoContext;
+
 	class CryoThread {
 	public:
-		CryoThread(const parser::FunctionDefinitionNode* func);
+		CryoThread(const parser::FunctionDefinitionNode* func, const CryoContext* context);
 		~CryoThread();
 
 		void run(const std::vector<ExpressionResult>& param = {});
@@ -22,6 +24,7 @@ namespace cryo::runtime {
 			Return
 		};
 
+		const CryoContext* m_Context = nullptr;
 		const parser::FunctionDefinitionNode* m_Function;
 		CryoStack m_Stack;
 
@@ -39,6 +42,7 @@ namespace cryo::runtime {
 		void execute_while_loop(const parser::WhileNode* wl);
 		void execute_loop(const parser::LoopNode* ln);
 		void execute_return_node(const parser::ReturnStatementNode* return_statement);
+		void execute_function_call_node(const parser::FunctionCallNode* func_call);
 
 		void execute_print_node(const parser::PrintNode* print);
 

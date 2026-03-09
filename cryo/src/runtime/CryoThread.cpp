@@ -1,12 +1,13 @@
 #include "cryopch.h"
 #include "CryoThread.h"
 
+#include "CryoContext.h"
 #include "TypeID.h"
 
 namespace cryo::runtime {
 
-	CryoThread::CryoThread(const parser::FunctionDefinitionNode* func) 
-		: m_Function(func) {
+	CryoThread::CryoThread(const parser::FunctionDefinitionNode* func, const CryoContext* context) 
+		: m_Context(context), m_Function(func) {
 	}
 
 	CryoThread::~CryoThread() {
@@ -49,6 +50,9 @@ namespace cryo::runtime {
 		}
 		else if (CHECK_NODE_TYPE(rt, parser::ReturnStatementNode, node)) {
 			execute_return_node(rt);
+		}
+		else if (CHECK_NODE_TYPE(func, parser::FunctionCallNode, node)) {
+			execute_function_call_node(func);
 		}
 		else if (CHECK_NODE_TYPE(ct, parser::ContinueStatementNode, node)) {
 			m_Flag = Continue;
@@ -413,6 +417,16 @@ namespace cryo::runtime {
 		m_ReturnValue = std::move(result.value());
 	}
 
+	void CryoThread::execute_function_call_node(const parser::FunctionCallNode* func_call) {
+		m_Stack.push_function_call();
+		auto func = m_Context->get_function(func_call->FuncID->Identifier.lexeme);
+		if (func == nullptr) {
+			throw std::runtime_error("Unknown function!");
+		}
+		execute_node_block(func->Body.get());
+		m_Stack.pop_function_call();
+	}
+
 	void CryoThread::execute_print_node(const parser::PrintNode* print) {
 		auto result = evaluate_expression(print->Value.get());
 		if (!result.has_value()) {
@@ -621,6 +635,7 @@ return op((*left), (*r)); }
 		auto left_value = std::move(left_result.value());
 		auto right_value = std::move(right_result.value());
 
+		// TODO: divide by 0 exception
 		switch (operation.Type) {
 			SWITCH_LABEL(parser::TokenType::PLUS, std::plus);
 			SWITCH_LABEL(parser::TokenType::MINUS, std::minus);
@@ -649,13 +664,13 @@ return op((*left), (*r)); }
 		auto value = std::move(v_result.value());
 
 		switch (operation.Type) {
-		case parser::TokenType::BANG: {
-			if (auto b = std::get_if<bool>(&value)) {
-				return !(*b);
-			}
+			case parser::TokenType::BANG: {
+				if (auto b = std::get_if<bool>(&value)) {
+					return !(*b);
+				}
 
-			break;
-		}
+				break;
+			}
 		}
 
 		return {};

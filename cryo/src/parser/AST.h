@@ -80,6 +80,13 @@ namespace cryo::parser {
         std::unique_ptr<ScopeNode> Body;
     };
 
+    struct FunctionCallNode : public Node {
+        ~FunctionCallNode() override = default;
+
+        std::unique_ptr<IdentifierNode> FuncID;
+        std::unique_ptr<NodeBlock> Arguments;
+    };
+
     struct ReturnStatementNode : public Node {
         ~ReturnStatementNode() override = default;
 

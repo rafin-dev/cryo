@@ -108,8 +108,7 @@ namespace cryo::parser {
         return nullptr;
     }
 
-    std::unique_ptr<ScopeNode> AstBuilder::build_scope_node()
-    {
+    std::unique_ptr<ScopeNode> AstBuilder::build_scope_node() {
         auto body = std::make_unique<ScopeNode>();
         std::stack<ScopeNode*> scope_stack;
         scope_stack.push(body.get());
@@ -325,6 +324,14 @@ namespace cryo::parser {
             }
         }
 
+        // To be a function call it needs to be at least 3 tokens -> id(...)
+        if (tokens.size() > 2 && 
+            tokens[0].Type == TokenType::IDENTIFIER && 
+            tokens[1].Type == TokenType::LEFT_PAREN &&
+            tokens[tokens.size() - 1].Type == TokenType::RIGHT_PAREN) {
+            return build_function_call_ast(tokens);
+        }
+
         uint32_t op;
         if (const auto result = get_least_priority_operator(tokens); result.has_value()) {
             op = result.value();
@@ -406,11 +413,58 @@ namespace cryo::parser {
                 return ass;
             }
 
+            case TokenType::COMMA: {
+                auto expr_list = std::make_unique<NodeBlock>();
+
+                auto left = build_expression_component_ast(remove_useless_paren(std::span(tokens.data(), op)));
+                if (auto* left_list = dynamic_cast<NodeBlock*>(left.get())) {
+                    expr_list->Block = std::move(left_list->Block);
+                }
+                else {
+                    expr_list->Block.emplace_back(std::move(left));
+                }
+
+                auto right = 
+                    build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
+                if (auto* right_list = dynamic_cast<NodeBlock*>(left.get())) {
+                    for (auto& expr : right_list->Block) {
+                        expr_list->Block.emplace_back(std::move(expr));
+                    }
+                    right_list->Block.clear();
+                }
+                else {
+                    expr_list->Block.emplace_back(std::move(right));
+                }
+                
+                return expr_list;
+            }
+
             default: {
                 throw std::logic_error("Expected operator_token to be an operator!");
                 return nullptr;
             }
         }
+    }
+
+    std::unique_ptr<Node> AstBuilder::build_function_call_ast(const std::span<const Token> tokens) {
+        auto func_call = std::make_unique<FunctionCallNode>();
+        func_call->FuncID = std::make_unique<IdentifierNode>(tokens[0]);
+
+        auto result = build_expression_component_ast(std::span(tokens.data() + 1, tokens.size() - 1));
+        if (!result) {
+            return std::move(func_call);
+        }
+
+        if (auto* block = dynamic_cast<NodeBlock*>(result.get())) {
+            result.release();
+            func_call->Arguments.reset(block);
+        }
+        else {
+            func_call->Arguments = std::make_unique<NodeBlock>();
+            func_call->Arguments->Block.emplace_back(std::move(result));
+        }
+
+        return std::move(func_call);
     }
 
     std::unique_ptr<Node> AstBuilder::build_if_statement_node()
@@ -614,42 +668,45 @@ namespace cryo::parser {
     }
 
     std::map<TokenType, uint32_t> s_operator_reverse_order = {
+        // Comma
+        { TokenType::COMMA, 1 },
+
         // Assignment
-        { TokenType::EQUAL, 0 },
+        { TokenType::EQUAL, 1 },
 
         // Logical OR
-        { TokenType::OR_OR, 1 },
+        { TokenType::OR_OR, 2 },
 
         // Logical AND
-        { TokenType::AND_AND, 2 },
+        { TokenType::AND_AND, 3 },
 
         // Bitwise OR
-        { TokenType::OR, 3 },
+        { TokenType::OR, 4 },
 
         // Bitwise AND
-        { TokenType::AND, 5 },
+        { TokenType::AND, 6 },
 
         // Comparison == and !=
-        { TokenType::BANG_EQUAL, 6 },
-        { TokenType::EQUAL_EQUAL, 6 },
+        { TokenType::BANG_EQUAL, 7 },
+        { TokenType::EQUAL_EQUAL, 7 },
 
         // Comparison <, <=, >, >=
-        { TokenType::GREATER, 7 },
-        { TokenType::GREATER_EQUAL, 7 },
-        { TokenType::LESS, 7 },
-        { TokenType::LESS_EQUAL, 7 },
+        { TokenType::GREATER, 8 },
+        { TokenType::GREATER_EQUAL, 8 },
+        { TokenType::LESS, 8 },
+        { TokenType::LESS_EQUAL, 8 },
 
         // Addition and subtraction
-        { TokenType::PLUS, 8 },
-        { TokenType::MINUS, 8 },
+        { TokenType::PLUS, 9 },
+        { TokenType::MINUS, 9 },
 
         // Multiplication, division and remainder
-        { TokenType::ASTERISK, 9 },
-        { TokenType::SLASH, 9 },
-        { TokenType::REMAINDER, 9 },
+        { TokenType::ASTERISK, 10 },
+        { TokenType::SLASH, 10 },
+        { TokenType::REMAINDER, 10 },
 
         // Logical not
-        { TokenType::BANG, 10 },
+        { TokenType::BANG, 11 },
     };
 
     std::optional<uint32_t> AstBuilder::get_least_priority_operator(const std::span<const Token> expression) {

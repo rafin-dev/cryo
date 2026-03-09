@@ -15,6 +15,8 @@ namespace cryo::runtime {
 
 		void run(const std::string& func);
 
+		const parser::FunctionDefinitionNode* get_function(const std::string& name) const;
+
 	private:
 		void search_NodeBlock(const parser::NodeBlock* block);
 

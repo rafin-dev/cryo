@@ -30,8 +30,16 @@ namespace cryo::runtime {
 			std::exit(-1);
 		}
 
-		m_MainThread = std::make_unique<CryoThread>(ite->second);
+		m_MainThread = std::make_unique<CryoThread>(ite->second, this);
 		m_MainThread->run();
+	}
+
+	const parser::FunctionDefinitionNode* CryoContext::get_function(const std::string& name) const {
+		auto ite = m_Functions.find(name);
+		if (ite == m_Functions.end()) {
+			return nullptr;
+		}
+		return ite->second;
 	}
 
 	void CryoContext::search_NodeBlock(const cryo::parser::NodeBlock* block)
