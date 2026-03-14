@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TypeID.h"
+#include "parser/AST.h"
 
 #include <stack>
 #include <vector>
@@ -20,7 +21,7 @@ namespace cryo::runtime {
 
 		std::optional<push_error> push_variable(const std::string& name, TypeID type);
 
-		void push_function_call(); // TODO: parameters, rerturn type, call stack...
+		void push_function_call();
 		bool pop_function_call();
 
 		void push_scope();

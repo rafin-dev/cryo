@@ -84,7 +84,7 @@ namespace cryo::parser {
         ~FunctionCallNode() override = default;
 
         std::unique_ptr<IdentifierNode> FuncID;
-        std::unique_ptr<NodeBlock> Arguments;
+        std::unique_ptr<NodeBlock> Arguments = std::make_unique<NodeBlock>();
     };
 
     struct ReturnStatementNode : public Node {

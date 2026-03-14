@@ -36,11 +36,16 @@ fn main() {
    test = -1;
    print !false;
 
-   greet();
+   hi();
 }
 
-fn greet() {
-    var test: f32 = 10.5;
-    print "Hi, i'm a different function!";
-    print test;
+fn greet(var i: i32, var i2: f32) {
+   print "Hi, i'm a different function!";
+   print i;
+   print i2;
+}
+
+fn hi() {
+   print "hello";
+   greet(25, 10.6);
 }

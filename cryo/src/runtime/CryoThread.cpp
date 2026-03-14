@@ -105,9 +105,6 @@ namespace cryo::runtime {
 		}
 	}
 
-#define GET_IF(ass_type, var, T) if (auto var = std::get_if<T>(&value)) { succes = true; \
- *m_Stack.get_variable_as_cpp_type<ass_type>(var_data->Location) = *var; break; }
-
 	void CryoThread::execute_assignment_operation_node(const parser::AssignmentOperation* ass) {
 		auto var_data = m_Stack.get_var_data(ass->LeftValue->Identifier.lexeme);
 		if (var_data == nullptr) {
@@ -120,215 +117,8 @@ namespace cryo::runtime {
 		}
 
 		auto value = std::move(expr_result.value());
-		bool succes = false;
-		switch (var_data->Type) {
-		case BOOL: {
-			GET_IF(bool, b, bool);
-			break;
-		}
-		
-		case CHAR: {
-			GET_IF(char, c, char);
-
-			GET_IF(char, u8, uint8_t);
-			GET_IF(char, u16, uint16_t);
-			GET_IF(char, u32, uint32_t);
-			GET_IF(char, u64, uint64_t);
-				   
-			GET_IF(char, i8, int8_t);
-			GET_IF(char, i16, int16_t);
-			GET_IF(char, i32, int32_t);
-			GET_IF(char, i64, int64_t);
-				   
-			GET_IF(char, c, char);
-				   
-			GET_IF(char, f, float);
-			GET_IF(char, d, double);
-			break;
-		}
-
-		case U8: {
-			GET_IF(uint8_t, u8, uint8_t);
-			GET_IF(uint8_t, u16, uint16_t);
-			GET_IF(uint8_t, u32, uint32_t);
-			GET_IF(uint8_t, u64, uint64_t);
-
-			GET_IF(uint8_t, i8, int8_t);
-			GET_IF(uint8_t, i16, int16_t);
-			GET_IF(uint8_t, i32, int32_t);
-			GET_IF(uint8_t, i64, int64_t);
-
-			GET_IF(uint8_t, c, char);
-
-			GET_IF(uint8_t, f, float);
-			GET_IF(uint8_t, d, double);
-			break;
-		}
-
-		case I8: {
-			GET_IF(int8_t, u8, uint8_t);
-			GET_IF(int8_t, u16, uint16_t);
-			GET_IF(int8_t, u32, uint32_t);
-			GET_IF(int8_t, u64, uint64_t);
-
-			GET_IF(int8_t, i8, int8_t);
-			GET_IF(int8_t, i16, int16_t);
-			GET_IF(int8_t, i32, int32_t);
-			GET_IF(int8_t, i64, int64_t);
-
-			GET_IF(int8_t, c, char);
-
-			GET_IF(int8_t, f, float);
-			GET_IF(int8_t, d, double);
-			break;
-		}
-
-		case U16: {
-			GET_IF(uint16_t, u8, uint8_t);
-			GET_IF(uint16_t, u16, uint16_t);
-			GET_IF(uint16_t, u32, uint32_t);
-			GET_IF(uint16_t, u64, uint64_t);
-					   
-			GET_IF(uint16_t, i8, int8_t);
-			GET_IF(uint16_t, i16, int16_t);
-			GET_IF(uint16_t, i32, int32_t);
-			GET_IF(uint16_t, i64, int64_t);
-					   
-			GET_IF(uint16_t, c, char);
-					   
-			GET_IF(uint16_t, f, float);
-			GET_IF(uint16_t, d, double);
-			break;
-		}
-
-		case I16: {
-			GET_IF(int16_t, u8, uint8_t);
-			GET_IF(int16_t, u16, uint16_t);
-			GET_IF(int16_t, u32, uint32_t);
-			GET_IF(int16_t, u64, uint64_t);
-				   
-			GET_IF(int16_t, i8, int8_t);
-			GET_IF(int16_t, i16, int16_t);
-			GET_IF(int16_t, i32, int32_t);
-			GET_IF(int16_t, i64, int64_t);
-				   
-			GET_IF(int16_t, c, char);
-				   
-			GET_IF(int16_t, f, float);
-			GET_IF(int16_t, d, double);
-			break;
-		}
-
-		case U32: {
-			GET_IF(uint32_t, u8, uint8_t);
-			GET_IF(uint32_t, u16, uint16_t);
-			GET_IF(uint32_t, u32, uint32_t);
-			GET_IF(uint32_t, u64, uint64_t);
-					   
-			GET_IF(uint32_t, i8, int8_t);
-			GET_IF(uint32_t, i16, int16_t);
-			GET_IF(uint32_t, i32, int32_t);
-			GET_IF(uint32_t, i64, int64_t);
-					   
-			GET_IF(uint32_t, c, char);
-					   
-			GET_IF(uint32_t, f, float);
-			GET_IF(uint32_t, d, double);
-			break;
-		}
-
-		case I32: {
-			GET_IF(int32_t, u8, uint8_t);
-			GET_IF(int32_t, u16, uint16_t);
-			GET_IF(int32_t, u32, uint32_t);
-			GET_IF(int32_t, u64, uint64_t);
-					  
-			GET_IF(int32_t, i8, int8_t);
-			GET_IF(int32_t, i16, int16_t);
-			GET_IF(int32_t, i32, int32_t);
-			GET_IF(int32_t, i64, int64_t);
-					  
-			GET_IF(int32_t, c, char);
-					  
-			GET_IF(int32_t, f, float);
-			GET_IF(int32_t, d, double);
-			break;
-		}
-
-		case U64: {
-			GET_IF(uint64_t, u8, uint8_t);
-			GET_IF(uint64_t, u16, uint16_t);
-			GET_IF(uint64_t, u32, uint32_t);
-			GET_IF(uint64_t, u64, uint64_t);
-					   
-			GET_IF(uint64_t, i8, int8_t);
-			GET_IF(uint64_t, i16, int16_t);
-			GET_IF(uint64_t, i32, int32_t);
-			GET_IF(uint64_t, i64, int64_t);
-					   
-			GET_IF(uint64_t, c, char);
-					   
-			GET_IF(uint64_t, f, float);
-			GET_IF(uint64_t, d, double);
-			break;
-		}
-
-		case I64: {
-			GET_IF(int64_t, u8, uint8_t);
-			GET_IF(int64_t, u16, uint16_t);
-			GET_IF(int64_t, u32, uint32_t);
-			GET_IF(int64_t, u64, uint64_t);
-					  
-			GET_IF(int64_t, i8, int8_t);
-			GET_IF(int64_t, i16, int16_t);
-			GET_IF(int64_t, i32, int32_t);
-			GET_IF(int64_t, i64, int64_t);
-					  
-			GET_IF(int64_t, c, char);
-					  
-			GET_IF(int64_t, f, float);
-			GET_IF(int64_t, d, double);
-			break;
-		}
-
-		case F32: {
-			GET_IF(float, u8, uint8_t);
-			GET_IF(float, u16, uint16_t);
-			GET_IF(float, u32, uint32_t);
-			GET_IF(float, u64, uint64_t);
-				   
-			GET_IF(float, i8, int8_t);
-			GET_IF(float, i16, int16_t);
-			GET_IF(float, i32, int32_t);
-			GET_IF(float, i64, int64_t);
-				   
-			GET_IF(float, c, char);
-				   
-			GET_IF(float, f, float);
-			GET_IF(float, d, double);
-			break;
-		}
-
-		case F64: {
-			GET_IF(double, u8, uint8_t);
-			GET_IF(double, u16, uint16_t);
-			GET_IF(double, u32, uint32_t);
-			GET_IF(double, u64, uint64_t);
-				   
-			GET_IF(double, i8, int8_t);
-			GET_IF(double, i16, int16_t);
-			GET_IF(double, i32, int32_t);
-			GET_IF(double, i64, int64_t);
-				   
-			GET_IF(double, c, char);
-				   
-			GET_IF(double, f, float);
-			GET_IF(double, d, double);
-			break;
-		}
-		}
-		if (!succes) {
-			throw std::runtime_error("Invalid Expression for assignment");
+		if (!assign_variable_value(var_data->Type, var_data->Location, value)) {
+			throw std::runtime_error("Failed to assign valriable!");
 		}
 	}
 
@@ -418,11 +208,37 @@ namespace cryo::runtime {
 	}
 
 	void CryoThread::execute_function_call_node(const parser::FunctionCallNode* func_call) {
-		m_Stack.push_function_call();
 		auto func = m_Context->get_function(func_call->FuncID->Identifier.lexeme);
 		if (func == nullptr) {
 			throw std::runtime_error("Unknown function!");
 		}
+		if (func_call->Arguments->Block.size() != func->Parameters.size()) {
+			throw std::runtime_error("Wrong number of arguments!");
+		}
+		
+		// Resolve parameters expressions
+		std::vector<ExpressionResult> params;
+		params.reserve(func->Parameters.size());
+		for (auto& expr : func_call->Arguments->Block) {
+			auto result = evaluate_expression(expr.get());
+			if (!result.has_value()) {
+				throw std::runtime_error("Failed to evaluate parameter!");
+			}
+			params.push_back(std::move(result.value()));
+		}
+
+		m_Stack.push_function_call();
+		// Create parameter variables
+		for (int i = 0; i < params.size(); i++) {
+			TypeID type = get_type_from_string(func->Parameters[i]->TypeIdentifier->Identifier.lexeme).value();
+			const auto& name = func->Parameters[i]->VariableIdentifier->Identifier.lexeme;
+			m_Stack.push_variable(name, type);
+
+			if (!assign_variable_value(type, m_Stack.get_var_data(name)->Location, params[i])) {
+				throw std::runtime_error("Failed to assign expression result to parameter!");
+			}
+		}
+		
 		execute_node_block(func->Body.get());
 		m_Stack.pop_function_call();
 	}
@@ -674,6 +490,222 @@ return op((*left), (*r)); }
 		}
 
 		return {};
+	}
+
+#define GET_IF(ass_type, var, T) if (auto var = std::get_if<T>(&value)) { succes = true; \
+ *m_Stack.get_variable_as_cpp_type<ass_type>(var_location) = *var; break; }
+
+	bool CryoThread::assign_variable_value(const TypeID var_type, const uint32_t var_location, const ExpressionResult& value)
+	{
+		bool succes = false;
+		switch (var_type) {
+		case BOOL: {
+			GET_IF(bool, b, bool);
+			break;
+		}
+
+		case CHAR: {
+			GET_IF(char, c, char);
+
+			GET_IF(char, u8, uint8_t);
+			GET_IF(char, u16, uint16_t);
+			GET_IF(char, u32, uint32_t);
+			GET_IF(char, u64, uint64_t);
+
+			GET_IF(char, i8, int8_t);
+			GET_IF(char, i16, int16_t);
+			GET_IF(char, i32, int32_t);
+			GET_IF(char, i64, int64_t);
+
+			GET_IF(char, c, char);
+
+			GET_IF(char, f, float);
+			GET_IF(char, d, double);
+			break;
+		}
+
+		case U8: {
+			GET_IF(uint8_t, u8, uint8_t);
+			GET_IF(uint8_t, u16, uint16_t);
+			GET_IF(uint8_t, u32, uint32_t);
+			GET_IF(uint8_t, u64, uint64_t);
+
+			GET_IF(uint8_t, i8, int8_t);
+			GET_IF(uint8_t, i16, int16_t);
+			GET_IF(uint8_t, i32, int32_t);
+			GET_IF(uint8_t, i64, int64_t);
+
+			GET_IF(uint8_t, c, char);
+
+			GET_IF(uint8_t, f, float);
+			GET_IF(uint8_t, d, double);
+			break;
+		}
+
+		case I8: {
+			GET_IF(int8_t, u8, uint8_t);
+			GET_IF(int8_t, u16, uint16_t);
+			GET_IF(int8_t, u32, uint32_t);
+			GET_IF(int8_t, u64, uint64_t);
+
+			GET_IF(int8_t, i8, int8_t);
+			GET_IF(int8_t, i16, int16_t);
+			GET_IF(int8_t, i32, int32_t);
+			GET_IF(int8_t, i64, int64_t);
+
+			GET_IF(int8_t, c, char);
+
+			GET_IF(int8_t, f, float);
+			GET_IF(int8_t, d, double);
+			break;
+		}
+
+		case U16: {
+			GET_IF(uint16_t, u8, uint8_t);
+			GET_IF(uint16_t, u16, uint16_t);
+			GET_IF(uint16_t, u32, uint32_t);
+			GET_IF(uint16_t, u64, uint64_t);
+
+			GET_IF(uint16_t, i8, int8_t);
+			GET_IF(uint16_t, i16, int16_t);
+			GET_IF(uint16_t, i32, int32_t);
+			GET_IF(uint16_t, i64, int64_t);
+
+			GET_IF(uint16_t, c, char);
+
+			GET_IF(uint16_t, f, float);
+			GET_IF(uint16_t, d, double);
+			break;
+		}
+
+		case I16: {
+			GET_IF(int16_t, u8, uint8_t);
+			GET_IF(int16_t, u16, uint16_t);
+			GET_IF(int16_t, u32, uint32_t);
+			GET_IF(int16_t, u64, uint64_t);
+
+			GET_IF(int16_t, i8, int8_t);
+			GET_IF(int16_t, i16, int16_t);
+			GET_IF(int16_t, i32, int32_t);
+			GET_IF(int16_t, i64, int64_t);
+
+			GET_IF(int16_t, c, char);
+
+			GET_IF(int16_t, f, float);
+			GET_IF(int16_t, d, double);
+			break;
+		}
+
+		case U32: {
+			GET_IF(uint32_t, u8, uint8_t);
+			GET_IF(uint32_t, u16, uint16_t);
+			GET_IF(uint32_t, u32, uint32_t);
+			GET_IF(uint32_t, u64, uint64_t);
+
+			GET_IF(uint32_t, i8, int8_t);
+			GET_IF(uint32_t, i16, int16_t);
+			GET_IF(uint32_t, i32, int32_t);
+			GET_IF(uint32_t, i64, int64_t);
+
+			GET_IF(uint32_t, c, char);
+
+			GET_IF(uint32_t, f, float);
+			GET_IF(uint32_t, d, double);
+			break;
+		}
+
+		case I32: {
+			GET_IF(int32_t, u8, uint8_t);
+			GET_IF(int32_t, u16, uint16_t);
+			GET_IF(int32_t, u32, uint32_t);
+			GET_IF(int32_t, u64, uint64_t);
+
+			GET_IF(int32_t, i8, int8_t);
+			GET_IF(int32_t, i16, int16_t);
+			GET_IF(int32_t, i32, int32_t);
+			GET_IF(int32_t, i64, int64_t);
+
+			GET_IF(int32_t, c, char);
+
+			GET_IF(int32_t, f, float);
+			GET_IF(int32_t, d, double);
+			break;
+		}
+
+		case U64: {
+			GET_IF(uint64_t, u8, uint8_t);
+			GET_IF(uint64_t, u16, uint16_t);
+			GET_IF(uint64_t, u32, uint32_t);
+			GET_IF(uint64_t, u64, uint64_t);
+
+			GET_IF(uint64_t, i8, int8_t);
+			GET_IF(uint64_t, i16, int16_t);
+			GET_IF(uint64_t, i32, int32_t);
+			GET_IF(uint64_t, i64, int64_t);
+
+			GET_IF(uint64_t, c, char);
+
+			GET_IF(uint64_t, f, float);
+			GET_IF(uint64_t, d, double);
+			break;
+		}
+
+		case I64: {
+			GET_IF(int64_t, u8, uint8_t);
+			GET_IF(int64_t, u16, uint16_t);
+			GET_IF(int64_t, u32, uint32_t);
+			GET_IF(int64_t, u64, uint64_t);
+
+			GET_IF(int64_t, i8, int8_t);
+			GET_IF(int64_t, i16, int16_t);
+			GET_IF(int64_t, i32, int32_t);
+			GET_IF(int64_t, i64, int64_t);
+
+			GET_IF(int64_t, c, char);
+
+			GET_IF(int64_t, f, float);
+			GET_IF(int64_t, d, double);
+			break;
+		}
+
+		case F32: {
+			GET_IF(float, u8, uint8_t);
+			GET_IF(float, u16, uint16_t);
+			GET_IF(float, u32, uint32_t);
+			GET_IF(float, u64, uint64_t);
+
+			GET_IF(float, i8, int8_t);
+			GET_IF(float, i16, int16_t);
+			GET_IF(float, i32, int32_t);
+			GET_IF(float, i64, int64_t);
+
+			GET_IF(float, c, char);
+
+			GET_IF(float, f, float);
+			GET_IF(float, d, double);
+			break;
+		}
+
+		case F64: {
+			GET_IF(double, u8, uint8_t);
+			GET_IF(double, u16, uint16_t);
+			GET_IF(double, u32, uint32_t);
+			GET_IF(double, u64, uint64_t);
+
+			GET_IF(double, i8, int8_t);
+			GET_IF(double, i16, int16_t);
+			GET_IF(double, i32, int32_t);
+			GET_IF(double, i64, int64_t);
+
+			GET_IF(double, c, char);
+
+			GET_IF(double, f, float);
+			GET_IF(double, d, double);
+			break;
+		}
+		}
+
+		return succes;
 	}
 
 }

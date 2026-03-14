@@ -52,10 +52,31 @@ namespace cryo::parser {
                 return nullptr;
             }
 
-            // TODO: Parameters
+            // Parameters
+            advance();
+            while (peek().Type == TokenType::VAR) {
+                // This is very hacked in, TODO: remake in the future
+                auto param = build_variable_declaration_ast();
+                if (!param) {
+                    return nullptr;
+                }
+                auto* param_ptr = dynamic_cast<VariableDeclarationNode*>(param.release());
+                if (!param_ptr) {
+                    // TODO: this is part of why its hacked in
+                    return nullptr;
+                }
+                function_node->Parameters.emplace_back(param_ptr);
+
+                if (peek().Type == TokenType::RIGHT_PAREN) {
+                    break;
+                }
+                else if (peek().Type == TokenType::COMMA) {
+                    advance();
+                }
+            }
 
             // Close parameters
-            if (const auto close_param = advance(); close_param.Type != TokenType::END_OF_FILE) {
+            if (const auto close_param = peek(); close_param.Type != TokenType::END_OF_FILE) {
                 if (close_param.Type != TokenType::RIGHT_PAREN) {
                     push_error(CE_INVALID_TOKEN, "Function parameters where never closed!");
                     return nullptr;
@@ -248,6 +269,8 @@ namespace cryo::parser {
         var_decl->TypeIdentifier = std::make_unique<IdentifierNode>(var_type);
 
         switch (auto& semicolon_or_assign = advance(); semicolon_or_assign.Type) {
+            case TokenType::COMMA:
+            case TokenType::RIGHT_PAREN:
             case TokenType::SEMICOLON: {
                 return var_decl;
             }
@@ -450,7 +473,7 @@ namespace cryo::parser {
         auto func_call = std::make_unique<FunctionCallNode>();
         func_call->FuncID = std::make_unique<IdentifierNode>(tokens[0]);
 
-        auto result = build_expression_component_ast(std::span(tokens.data() + 1, tokens.size() - 1));
+        auto result = build_expression_component_ast(std::span(tokens.data() + 2, tokens.size() - 3));
         if (!result) {
             return std::move(func_call);
         }

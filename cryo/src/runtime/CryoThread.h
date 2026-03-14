@@ -55,6 +55,8 @@ namespace cryo::runtime {
 		std::optional<ExpressionResult> evaluate_identifier_node(const parser::IdentifierNode* node);
 		std::optional<ExpressionResult> evaluate_binary_operation(const parser::BinaryOperation* op);
 		std::optional<ExpressionResult> evaluate_unary_operation(const parser::UnaryOperation* op);
+
+		bool assign_variable_value(const TypeID var_type, const uint32_t var_location, const ExpressionResult& value);
 	};
 
 }
