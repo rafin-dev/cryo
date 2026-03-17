@@ -214,16 +214,20 @@ namespace cryo::runtime {
 
 	std::optional<ExpressionResult> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
 		auto func = m_Context->get_function(func_call->FuncID->Identifier.lexeme);
+		const InternalFunction* internal_func = nullptr;
 		if (func == nullptr) {
-			throw std::runtime_error("Unknown function!");
+			internal_func = m_Context->get_internal_function(func_call->FuncID->Identifier.lexeme);
+			if (internal_func == nullptr) {
+				throw std::runtime_error("Function does not exist!");
+			}
 		}
-		if (func_call->Arguments->Block.size() != func->Parameters.size()) {
+		else if (func_call->Arguments->Block.size() != func->Parameters.size()) {
 			throw std::runtime_error("Wrong number of arguments!");
 		}
 		
 		// Resolve parameters expressions
 		std::vector<ExpressionResult> params;
-		params.reserve(func->Parameters.size());
+		params.reserve(func_call->Arguments->Block.size());
 		for (auto& expr : func_call->Arguments->Block) {
 			auto result = evaluate_expression(expr.get());
 			if (!result.has_value()) {
@@ -232,27 +236,34 @@ namespace cryo::runtime {
 			params.push_back(std::move(result.value()));
 		}
 
-		m_Stack.push_function_call();
-		// Create parameter variables
-		for (int i = 0; i < params.size(); i++) {
-			TypeID type = get_type_from_string(func->Parameters[i]->TypeIdentifier->Identifier.lexeme).value();
-			const auto& name = func->Parameters[i]->VariableIdentifier->Identifier.lexeme;
-			m_Stack.push_variable(name, type);
+		if (func) {
+			m_Stack.push_function_call();
 
-			if (!assign_variable_value(type, m_Stack.get_var_data(name)->Location, params[i])) {
-				throw std::runtime_error("Failed to assign expression result to parameter!");
+			// Create parameter variables
+			for (int i = 0; i < params.size(); i++) {
+				TypeID type = get_type_from_string(func->Parameters[i]->TypeIdentifier->Identifier.lexeme).value();
+				const auto& name = func->Parameters[i]->VariableIdentifier->Identifier.lexeme;
+				m_Stack.push_variable(name, type);
+
+				if (!assign_variable_value(type, m_Stack.get_var_data(name)->Location, params[i])) {
+					throw std::runtime_error("Failed to assign expression result to parameter!");
+				}
 			}
-		}
-		
-		execute_node_block(func->Body.get());
-		m_Stack.pop_function_call();
 
-		m_Flag = None;
-		if (m_ReturnHasValue) {
-			m_ReturnHasValue = false;
-			return m_ReturnValue;
+			execute_node_block(func->Body.get());
+
+			m_Stack.pop_function_call();
+
+			m_Flag = None;
+			if (m_ReturnHasValue) {
+				m_ReturnHasValue = false;
+				return m_ReturnValue;
+			}
+			return {};
 		}
-		return {};
+		else {
+			return (*internal_func)(params);
+		}
 	}
 
 	void CryoThread::execute_print_node(const parser::PrintNode* print) {

@@ -8,6 +8,8 @@
 
 namespace cryo::runtime {
 
+	using InternalFunction = std::function<ExpressionResult(const std::vector<ExpressionResult>&)>;
+
 	class CryoContext {
 	public:
 		CryoContext(std::filesystem::path file);
@@ -16,6 +18,9 @@ namespace cryo::runtime {
 		void run(const std::string& func);
 
 		const parser::FunctionDefinitionNode* get_function(const std::string& name) const;
+		const InternalFunction* get_internal_function(const std::string& name) const;
+
+		void set_internal_function(const std::string& name, const InternalFunction& func);
 
 	private:
 		void search_NodeBlock(const parser::NodeBlock* block);
@@ -26,6 +31,7 @@ namespace cryo::runtime {
 
 		std::unique_ptr<parser::NodeBlock> m_SyntaxTree;
 		std::unordered_map<std::string, const parser::FunctionDefinitionNode*> m_Functions;
+		std::unordered_map<std::string, InternalFunction> m_InternalFunctions;
 	};
 
 }

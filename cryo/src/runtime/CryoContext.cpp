@@ -15,7 +15,11 @@ namespace cryo::runtime {
 		m_SyntaxTree = std::move(result.value());
 
 		search_NodeBlock(m_SyntaxTree.get());
-		m_Functions;
+
+		set_internal_function("internal", [](const std::vector<ExpressionResult>& params) -> ExpressionResult {
+			std::cout << std::get<std::string>(params[0]) << std::endl;
+			return "OMG";
+			});
 	}
 
 	CryoContext::~CryoContext() {
@@ -40,6 +44,18 @@ namespace cryo::runtime {
 			return nullptr;
 		}
 		return ite->second;
+	}
+
+	const InternalFunction* CryoContext::get_internal_function(const std::string& name) const {
+		auto ite = m_InternalFunctions.find(name);
+		if (ite == m_InternalFunctions.end()) {
+			return nullptr;
+		}
+		return &ite->second;
+	}
+
+	void CryoContext::set_internal_function(const std::string& name, const InternalFunction& func) {
+		m_InternalFunctions.insert(std::pair(name, func));
 	}
 
 	void CryoContext::search_NodeBlock(const cryo::parser::NodeBlock* block)

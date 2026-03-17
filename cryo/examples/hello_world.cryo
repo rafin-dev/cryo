@@ -1,5 +1,8 @@
 fn main() {
    print hi();
+
+   // Example of internal function, defined in the interpreter
+   print internal("Hi!");
 }
 
 fn greet(var i: i32, var i2: f32) {
