@@ -29,6 +29,7 @@ namespace cryo::runtime {
 		CryoStack m_Stack;
 
 		RuntimeFlags m_Flag = None;
+		bool m_ReturnHasValue = false;
 		ExpressionResult m_ReturnValue;
 
 		void execute_node(const parser::Node* node);
@@ -42,7 +43,6 @@ namespace cryo::runtime {
 		void execute_while_loop(const parser::WhileNode* wl);
 		void execute_loop(const parser::LoopNode* ln);
 		void execute_return_node(const parser::ReturnStatementNode* return_statement);
-		void execute_function_call_node(const parser::FunctionCallNode* func_call);
 
 		void execute_print_node(const parser::PrintNode* print);
 
@@ -55,6 +55,7 @@ namespace cryo::runtime {
 		std::optional<ExpressionResult> evaluate_identifier_node(const parser::IdentifierNode* node);
 		std::optional<ExpressionResult> evaluate_binary_operation(const parser::BinaryOperation* op);
 		std::optional<ExpressionResult> evaluate_unary_operation(const parser::UnaryOperation* op);
+		std::optional<ExpressionResult> evaluate_function_call_node(const parser::FunctionCallNode* func_call);
 
 		bool assign_variable_value(const TypeID var_type, const uint32_t var_location, const ExpressionResult& value);
 	};

@@ -52,7 +52,7 @@ namespace cryo::runtime {
 			execute_return_node(rt);
 		}
 		else if (CHECK_NODE_TYPE(func, parser::FunctionCallNode, node)) {
-			execute_function_call_node(func);
+			evaluate_function_call_node(func);
 		}
 		else if (CHECK_NODE_TYPE(ct, parser::ContinueStatementNode, node)) {
 			m_Flag = Continue;
@@ -106,14 +106,18 @@ namespace cryo::runtime {
 	}
 
 	void CryoThread::execute_assignment_operation_node(const parser::AssignmentOperation* ass) {
-		auto var_data = m_Stack.get_var_data(ass->LeftValue->Identifier.lexeme);
-		if (var_data == nullptr) {
-			throw std::runtime_error("Assignment for an unknwon variable");
-		}
-
 		auto expr_result = evaluate_expression(ass->RightValue.get());
 		if (!expr_result.has_value()) {
 			throw std::runtime_error("Failed to evaluate expression!");
+		}
+
+		// Variable data needs to be retrieved after the expression is resolved
+		// Because expression may include function calls
+		// Which could make the m_Stack object perform realocations for it's variable data vector
+		// Invalidxating the pointer to the data
+		auto* var_data = m_Stack.get_var_data(ass->LeftValue->Identifier.lexeme);
+		if (var_data == nullptr) {
+			throw std::runtime_error("Assignment for an unknwon variable");
 		}
 
 		auto value = std::move(expr_result.value());
@@ -204,10 +208,11 @@ namespace cryo::runtime {
 			throw std::runtime_error("Failed to evaluate expression!");
 		}
 
+		m_ReturnHasValue = true;
 		m_ReturnValue = std::move(result.value());
 	}
 
-	void CryoThread::execute_function_call_node(const parser::FunctionCallNode* func_call) {
+	std::optional<ExpressionResult> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
 		auto func = m_Context->get_function(func_call->FuncID->Identifier.lexeme);
 		if (func == nullptr) {
 			throw std::runtime_error("Unknown function!");
@@ -241,6 +246,13 @@ namespace cryo::runtime {
 		
 		execute_node_block(func->Body.get());
 		m_Stack.pop_function_call();
+
+		m_Flag = None;
+		if (m_ReturnHasValue) {
+			m_ReturnHasValue = false;
+			return m_ReturnValue;
+		}
+		return {};
 	}
 
 	void CryoThread::execute_print_node(const parser::PrintNode* print) {
@@ -324,6 +336,9 @@ namespace cryo::runtime {
 		}
 		if (CHECK_NODE_TYPE(un_op, parser::UnaryOperation, node)) {
 			return evaluate_unary_operation(un_op);
+		}
+		if (CHECK_NODE_TYPE(func_call, parser::FunctionCallNode, node)) {
+			return evaluate_function_call_node(func_call);
 		}
 
 		return {};

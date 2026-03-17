@@ -93,7 +93,6 @@ namespace cryo::parser {
             return nullptr;
         }
 
-        // TODO: Return types
         if (peek_next().Type == TokenType::RETURN_TYPE) {
             advance();
 

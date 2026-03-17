@@ -1,42 +1,5 @@
 fn main() {
-   var test: i32 = 14;
-   var test2: i32 = 5;
-   print test + test2;
-
-   test = test * test2;
-   print test;
-
-   var i: i32 = 0;
-   while (i < 3) {
-      i = i + 1;
-      print i == 2;
-      if (i == 2) {
-         print "eureka!";
-         continue;
-      }
-      print i;
-   }
-
-   var count: u32 = 3;
-   loop (count * 2) {
-      print "HI!";
-   }
-
-   if (test == test2) {
-      print "Hello, World!";
-   } 
-   else if (test > test2) {
-      print "Goodbye world!";
-   } 
-   else {
-      print "IDK";
-   }
-
-   var o: f32 = -10.2;
-   test = -1;
-   print !false;
-
-   hi();
+   print hi();
 }
 
 fn greet(var i: i32, var i2: f32) {
@@ -48,4 +11,5 @@ fn greet(var i: i32, var i2: f32) {
 fn hi() {
    print "hello";
    greet(25, 10.6);
+   return "Hello, World!";
 }
