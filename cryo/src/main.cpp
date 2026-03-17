@@ -9,6 +9,8 @@
 #include <string>
 #include <print>
 
+#include "runtime/raylib_bindings.h"
+
 int main(const int argc, const char ** argv) {
     if (argc == 1) {
         std::cerr << "Missing source file" << std::endl;
@@ -21,5 +23,14 @@ int main(const int argc, const char ** argv) {
         return -1;
     }
 
-    cryo::runtime::CryoContext(argv[1]).run("main");
+    cryo::runtime::CryoContext context(argv[1]);
+
+    // Raylib bindings
+    context.set_internal_function("rlInitWindow", cryo::runtime::raylib::rl_init_window);
+    context.set_internal_function("rlCloseWindow", cryo::runtime::raylib::rl_close_window);
+    context.set_internal_function("rlWindowShouldClose", cryo::runtime::raylib::rl_window_should_close);
+    context.set_internal_function("rlBeginDrawing", cryo::runtime::raylib::rl_begin_drawing);
+    context.set_internal_function("rlEndDrawing", cryo::runtime::raylib::rl_end_drawing);
+
+    context.run("main");
 }

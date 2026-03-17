@@ -1,18 +1,11 @@
 fn main() {
-   print hi();
+   rlInitWindow(720, 480, "title!");
 
-   // Example of internal function, defined in the interpreter
-   print internal("Hi!");
-}
+   while (!rlWindowShouldClose()) {
+      rlBeginDrawing();
 
-fn greet(var i: i32, var i2: f32) {
-   print "Hi, i'm a different function!";
-   print i;
-   print i2;
-}
+      rlEndDrawing();
+   }
 
-fn hi() {
-   print "hello";
-   greet(25, 10.6);
-   return "Hello, World!";
+   rlCloseWindow();
 }
