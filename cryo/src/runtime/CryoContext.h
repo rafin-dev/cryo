@@ -8,7 +8,7 @@
 
 namespace cryo::runtime {
 
-	using InternalFunction = std::function<ExpressionResult(const std::vector<ExpressionResult>&)>;
+	using InternalFunction = std::function<CryoValue(const std::vector<CryoValue>&)>;
 
 	class CryoContext {
 	public:

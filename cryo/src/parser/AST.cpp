@@ -11,18 +11,14 @@ namespace cryo::parser {
         return str;
     }
 
-    static std::string variableNode_to_string(const VariableNode* var) {
-        return var->VariableIdentifier->Identifier.lexeme + ": " + var->TypeIdentifier->Identifier.lexeme;
-    }
-
     static std::string variableNodeDeclaration_to_string(const VariableDeclarationNode* var) {
-        return "var " + variableNode_to_string(var);
+        return "var " + var->Identifier.lexeme;
     }
 
     static std::string functionNode_to_string(const FunctionDefinitionNode* func) {
         std::string str = "fn " + func->Identifier->Identifier.lexeme + "( ";
         for (const auto& arg : func->Parameters) {
-            str += variableNode_to_string(arg.get()) + ", ";
+            str += arg->Identifier.lexeme + ", ";
         }
         str += " )";
 
@@ -61,9 +57,6 @@ namespace cryo::parser {
         }
         if (const auto var_decl = dynamic_cast<const VariableDeclarationNode*>(node); var_decl != nullptr) {
             return variableNodeDeclaration_to_string(var_decl);
-        }
-        if (const auto var = dynamic_cast<const VariableNode*>(node); var != nullptr) {
-            return variableNode_to_string(var);
         }
         if (const auto ass = dynamic_cast<const AssignmentOperation*>(node); ass != nullptr) {
             return AssignmentNode_to_string(ass);

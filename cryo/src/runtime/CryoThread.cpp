@@ -13,7 +13,7 @@ namespace cryo::runtime {
 	CryoThread::~CryoThread() {
 	}
 
-	void CryoThread::run(const std::vector<ExpressionResult>& param) {
+	void CryoThread::run(const std::vector<CryoValue>& param) {
 		m_Stack.push_function_call();
 		execute_node_block(m_Function->Body.get());
 		if (m_Flag != None && m_Flag != Return) {
@@ -79,20 +79,9 @@ namespace cryo::runtime {
 	}
 
 	void CryoThread::execute_variable_declaration_node(const parser::VariableDeclarationNode* var) {
-		TypeID type = VOID;
-		{
-			auto result = get_type_from_string(var->TypeIdentifier->Identifier.lexeme);
-			if (!result.has_value()) {
-				// TODO: user defined type
-			}
-			else {
-				type = result.value();
-			}
-		}
-
-		auto result = m_Stack.push_variable(var->VariableIdentifier->Identifier.lexeme, type);
-		if (result.has_value()) {
-			switch (result.value()) {
+		auto result = m_Stack.push_variable(var->Identifier.lexeme);
+		if (!result.has_value()) {
+			switch (result.error()) {
 			case StackOverflow:
 				throw std::runtime_error("StackOverflow");
 
@@ -115,15 +104,12 @@ namespace cryo::runtime {
 		// Because expression may include function calls
 		// Which could make the m_Stack object perform realocations for it's variable data vector
 		// Invalidxating the pointer to the data
-		auto* var_data = m_Stack.get_var_data(ass->LeftValue->Identifier.lexeme);
-		if (var_data == nullptr) {
+		auto* var = m_Stack.get_variable(ass->LeftValue->Identifier.lexeme);
+		if (var == nullptr) {
 			throw std::runtime_error("Assignment for an unknwon variable");
 		}
 
-		auto value = std::move(expr_result.value());
-		if (!assign_variable_value(var_data->Type, var_data->Location, value)) {
-			throw std::runtime_error("Failed to assign valriable!");
-		}
+		*var = expr_result.value();
 	}
 
 	void CryoThread::execute_if_then_else_node(const parser::IfThenElseNode* ite) {
@@ -212,7 +198,7 @@ namespace cryo::runtime {
 		m_ReturnValue = std::move(result.value());
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
+	std::optional<CryoValue> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
 		auto func = m_Context->get_function(func_call->FuncID->Identifier.lexeme);
 		const InternalFunction* internal_func = nullptr;
 		if (func == nullptr) {
@@ -226,7 +212,7 @@ namespace cryo::runtime {
 		}
 		
 		// Resolve parameters expressions
-		std::vector<ExpressionResult> params;
+		std::vector<CryoValue> params;
 		params.reserve(func_call->Arguments->Block.size());
 		for (auto& expr : func_call->Arguments->Block) {
 			auto result = evaluate_expression(expr.get());
@@ -241,13 +227,18 @@ namespace cryo::runtime {
 
 			// Create parameter variables
 			for (int i = 0; i < params.size(); i++) {
-				TypeID type = get_type_from_string(func->Parameters[i]->TypeIdentifier->Identifier.lexeme).value();
-				const auto& name = func->Parameters[i]->VariableIdentifier->Identifier.lexeme;
-				m_Stack.push_variable(name, type);
-
-				if (!assign_variable_value(type, m_Stack.get_var_data(name)->Location, params[i])) {
-					throw std::runtime_error("Failed to assign expression result to parameter!");
+				auto var = m_Stack.push_variable(func->Parameters[i]->Identifier.lexeme);
+				if (!var.has_value()) {
+					throw std::runtime_error("Failed to create parameter variable!");
 				}
+
+				auto value = evaluate_expression(func_call->Arguments->Block[i].get());
+				if (!value.has_value()) {
+					throw std::runtime_error("Failed to evaluate argument!");
+				}
+
+				// This looks kinda funny
+				*var.value() = value.value();
 			}
 
 			execute_node_block(func->Body.get());
@@ -273,13 +264,10 @@ namespace cryo::runtime {
 		}
 		auto value = std::move(result.value());
 
-		if (auto u32 = std::get_if<uint32_t>(&value)) {
-			std::cout << *u32;
-		}
-		else if (auto i32 = std::get_if<int32_t>(&value)) {
+		if (auto i32 = std::get_if<int64_t>(&value)) {
 			std::cout << *i32;
 		}
-		else if (auto f32 = std::get_if<float>(&value)) {
+		else if (auto f32 = std::get_if<double>(&value)) {
 			std::cout << *f32;
 		}
 		else if (auto b8 = std::get_if<bool>(&value)) {
@@ -291,30 +279,12 @@ namespace cryo::runtime {
 		std::cout << std::endl;
 	}
 
-	uint64_t CryoThread::get_loop_count(ExpressionResult result)
+	uint64_t CryoThread::get_loop_count(CryoValue result)
 	{
-		if (auto u8 = std::get_if<uint8_t>(&result)) {
-			return *u8;
-		}
-		if (auto i8 = std::get_if<int8_t>(&result)) {
-			return *i8;
-		}
-		if (auto u16 = std::get_if<uint16_t>(&result)) {
-			return *u16;
-		}
-		if (auto i16 = std::get_if<int16_t>(&result)) {
-			return *i16;
-		}
-		if (auto u32 = std::get_if<uint32_t>(&result)) {
-			return *u32;
-		}
-		if (auto i32 = std::get_if<int32_t>(&result)) {
-			return *i32;
-		}
-		if (auto u64 = std::get_if<uint64_t>(&result)) {
-			return *u64;
-		}
 		if (auto i64 = std::get_if<int64_t>(&result)) {
+			if (*i64 < 0) {
+				throw std::runtime_error("Loop count cannot be a negative value!");
+			}
 			return *i64;
 		}
 
@@ -334,7 +304,7 @@ namespace cryo::runtime {
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_expression(const parser::Node* node)
+	std::optional<CryoValue> CryoThread::evaluate_expression(const parser::Node* node)
 	{
 		if (CHECK_NODE_TYPE(lit, parser::LiteralNode, node)) {
 			return evaluate_literal_node(lit);
@@ -355,63 +325,35 @@ namespace cryo::runtime {
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_literal_node(const parser::LiteralNode* node)
+	std::optional<CryoValue> CryoThread::evaluate_literal_node(const parser::LiteralNode* node)
 	{
 		if (CHECK_NODE_TYPE(integer, parser::IntegerLiteralNode, node)) {
-			return ExpressionResult(std::stoi(integer->Value.lexeme));
+			return CryoValue(std::stoi(integer->Value.lexeme));
 		}
 		else if (CHECK_NODE_TYPE(floating, parser::FloatLiteralNode, node)) {
-			return ExpressionResult(std::stof(floating->Value.lexeme));
+			return CryoValue(std::stof(floating->Value.lexeme));
 		}
 		else if (CHECK_NODE_TYPE(boolean, parser::BoolLiteralNode, node)) {
-			return ExpressionResult(boolean->Value);
+			return CryoValue(boolean->Value);
 		}
 		else if (CHECK_NODE_TYPE(character, parser::CharLiteralNode, node)) {
-			return ExpressionResult(character->Character);
+			return CryoValue(character->Character);
 		}
 		else if (CHECK_NODE_TYPE(string, parser::StringLiteralNode, node)) {
-			return ExpressionResult(string->Value);
+			return CryoValue(string->Value);
 		}
 
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_identifier_node(const parser::IdentifierNode* node)
+	std::optional<CryoValue> CryoThread::evaluate_identifier_node(const parser::IdentifierNode* node)
 	{
-		auto var_data = m_Stack.get_var_data(node->Identifier.lexeme);
-		if (!var_data) {
+		auto var = m_Stack.get_variable(node->Identifier.lexeme);
+		if (var == nullptr) {
 			return {};
 		}
 
-		switch (var_data->Type) {
-		case BOOL:
-			return *m_Stack.get_variable_as_cpp_type<bool>(var_data->Location);
-		case CHAR:
-			return *m_Stack.get_variable_as_cpp_type<char>(var_data->Location);
-		case U8:
-			return *m_Stack.get_variable_as_cpp_type<uint8_t>(var_data->Location);
-		case I8:
-			return *m_Stack.get_variable_as_cpp_type<int8_t>(var_data->Location);
-
-		case U16:
-			return *m_Stack.get_variable_as_cpp_type<uint16_t>(var_data->Location);
-		case I16:
-			return *m_Stack.get_variable_as_cpp_type<int16_t>(var_data->Location);
-
-		case U32:
-			return *m_Stack.get_variable_as_cpp_type<uint32_t>(var_data->Location);
-		case I32:
-			return *m_Stack.get_variable_as_cpp_type<int32_t>(var_data->Location);
-		case F32:
-			return *m_Stack.get_variable_as_cpp_type<float>(var_data->Location);
-
-		case U64:
-			return *m_Stack.get_variable_as_cpp_type<uint64_t>(var_data->Location);
-		case I64:
-			return *m_Stack.get_variable_as_cpp_type<int64_t>(var_data->Location);
-		case F64:
-			return *m_Stack.get_variable_as_cpp_type<double>(var_data->Location);
-		}
+		return *var;
 	}
 
 
@@ -419,20 +361,9 @@ namespace cryo::runtime {
 return op((*left), (*r)); }
 
 	template<typename LEFT, typename op>
-	std::optional<ExpressionResult> operate_numeric_value(const ExpressionResult& left, const ExpressionResult& right) {
+	std::optional<CryoValue> operate_numeric_value(const CryoValue& left, const CryoValue& right) {
 		op operation;
 		if (auto left_value = std::get_if<LEFT>(&left)) {
-			CHECK_AND_EVALUATE(left_value, operation, uint8_t, ru8);
-			CHECK_AND_EVALUATE(left_value, operation, int8_t, ri8);
-							   
-			CHECK_AND_EVALUATE(left_value, operation, uint16_t, ru16);
-			CHECK_AND_EVALUATE(left_value, operation, int16_t, ri16);
-							   
-			CHECK_AND_EVALUATE(left_value, operation, uint32_t, ru32);
-			CHECK_AND_EVALUATE(left_value, operation, int32_t, ri32);
-			CHECK_AND_EVALUATE(left_value, operation, float, rf32);
-							   
-			CHECK_AND_EVALUATE(left_value, operation, uint64_t, ru64);
 			CHECK_AND_EVALUATE(left_value, operation, int64_t, ri64);
 			CHECK_AND_EVALUATE(left_value, operation, double, rf64);
 		}
@@ -448,24 +379,12 @@ return op((*left), (*r)); }
 
 #define SWITCH_LABEL(tkType, op) case tkType: { \
 	OPERATE_NUMERIC(bool, b8, op); \
-	OPERATE_NUMERIC(char, c8, op); \
-	OPERATE_NUMERIC(uint8_t, u8, op);	\
-	OPERATE_NUMERIC(int8_t, i8, op);		\
-												\
-	OPERATE_NUMERIC(uint16_t, u16, op);	\
-	OPERATE_NUMERIC(int16_t, i16, op);	\
-												\
-	OPERATE_NUMERIC(uint32_t, u32, op);	\
-	OPERATE_NUMERIC(int32_t, i32, op);	\
-	OPERATE_NUMERIC_F(float, float, f32, op);		\
-												\
-	OPERATE_NUMERIC(uint64_t, u64, op);	\
 	OPERATE_NUMERIC(int64_t, i64, op);	\
 	OPERATE_NUMERIC_F(double, double, f64, op);	\
 	break;										\
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_binary_operation(const parser::BinaryOperation* op)
+	std::optional<CryoValue> CryoThread::evaluate_binary_operation(const parser::BinaryOperation* op)
 	{
 		auto left_result = evaluate_expression(op->LeftValue.get());
 		auto& operation = op->Operator;
@@ -495,7 +414,7 @@ return op((*left), (*r)); }
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_unary_operation(const parser::UnaryOperation* op)
+	std::optional<CryoValue> CryoThread::evaluate_unary_operation(const parser::UnaryOperation* op)
 	{
 		auto v_result = evaluate_expression(op->Value.get());
 		auto& operation = op->Operator;
@@ -516,222 +435,6 @@ return op((*left), (*r)); }
 		}
 
 		return {};
-	}
-
-#define GET_IF(ass_type, var, T) if (auto var = std::get_if<T>(&value)) { succes = true; \
- *m_Stack.get_variable_as_cpp_type<ass_type>(var_location) = *var; break; }
-
-	bool CryoThread::assign_variable_value(const TypeID var_type, const uint32_t var_location, const ExpressionResult& value)
-	{
-		bool succes = false;
-		switch (var_type) {
-		case BOOL: {
-			GET_IF(bool, b, bool);
-			break;
-		}
-
-		case CHAR: {
-			GET_IF(char, c, char);
-
-			GET_IF(char, u8, uint8_t);
-			GET_IF(char, u16, uint16_t);
-			GET_IF(char, u32, uint32_t);
-			GET_IF(char, u64, uint64_t);
-
-			GET_IF(char, i8, int8_t);
-			GET_IF(char, i16, int16_t);
-			GET_IF(char, i32, int32_t);
-			GET_IF(char, i64, int64_t);
-
-			GET_IF(char, c, char);
-
-			GET_IF(char, f, float);
-			GET_IF(char, d, double);
-			break;
-		}
-
-		case U8: {
-			GET_IF(uint8_t, u8, uint8_t);
-			GET_IF(uint8_t, u16, uint16_t);
-			GET_IF(uint8_t, u32, uint32_t);
-			GET_IF(uint8_t, u64, uint64_t);
-
-			GET_IF(uint8_t, i8, int8_t);
-			GET_IF(uint8_t, i16, int16_t);
-			GET_IF(uint8_t, i32, int32_t);
-			GET_IF(uint8_t, i64, int64_t);
-
-			GET_IF(uint8_t, c, char);
-
-			GET_IF(uint8_t, f, float);
-			GET_IF(uint8_t, d, double);
-			break;
-		}
-
-		case I8: {
-			GET_IF(int8_t, u8, uint8_t);
-			GET_IF(int8_t, u16, uint16_t);
-			GET_IF(int8_t, u32, uint32_t);
-			GET_IF(int8_t, u64, uint64_t);
-
-			GET_IF(int8_t, i8, int8_t);
-			GET_IF(int8_t, i16, int16_t);
-			GET_IF(int8_t, i32, int32_t);
-			GET_IF(int8_t, i64, int64_t);
-
-			GET_IF(int8_t, c, char);
-
-			GET_IF(int8_t, f, float);
-			GET_IF(int8_t, d, double);
-			break;
-		}
-
-		case U16: {
-			GET_IF(uint16_t, u8, uint8_t);
-			GET_IF(uint16_t, u16, uint16_t);
-			GET_IF(uint16_t, u32, uint32_t);
-			GET_IF(uint16_t, u64, uint64_t);
-
-			GET_IF(uint16_t, i8, int8_t);
-			GET_IF(uint16_t, i16, int16_t);
-			GET_IF(uint16_t, i32, int32_t);
-			GET_IF(uint16_t, i64, int64_t);
-
-			GET_IF(uint16_t, c, char);
-
-			GET_IF(uint16_t, f, float);
-			GET_IF(uint16_t, d, double);
-			break;
-		}
-
-		case I16: {
-			GET_IF(int16_t, u8, uint8_t);
-			GET_IF(int16_t, u16, uint16_t);
-			GET_IF(int16_t, u32, uint32_t);
-			GET_IF(int16_t, u64, uint64_t);
-
-			GET_IF(int16_t, i8, int8_t);
-			GET_IF(int16_t, i16, int16_t);
-			GET_IF(int16_t, i32, int32_t);
-			GET_IF(int16_t, i64, int64_t);
-
-			GET_IF(int16_t, c, char);
-
-			GET_IF(int16_t, f, float);
-			GET_IF(int16_t, d, double);
-			break;
-		}
-
-		case U32: {
-			GET_IF(uint32_t, u8, uint8_t);
-			GET_IF(uint32_t, u16, uint16_t);
-			GET_IF(uint32_t, u32, uint32_t);
-			GET_IF(uint32_t, u64, uint64_t);
-
-			GET_IF(uint32_t, i8, int8_t);
-			GET_IF(uint32_t, i16, int16_t);
-			GET_IF(uint32_t, i32, int32_t);
-			GET_IF(uint32_t, i64, int64_t);
-
-			GET_IF(uint32_t, c, char);
-
-			GET_IF(uint32_t, f, float);
-			GET_IF(uint32_t, d, double);
-			break;
-		}
-
-		case I32: {
-			GET_IF(int32_t, u8, uint8_t);
-			GET_IF(int32_t, u16, uint16_t);
-			GET_IF(int32_t, u32, uint32_t);
-			GET_IF(int32_t, u64, uint64_t);
-
-			GET_IF(int32_t, i8, int8_t);
-			GET_IF(int32_t, i16, int16_t);
-			GET_IF(int32_t, i32, int32_t);
-			GET_IF(int32_t, i64, int64_t);
-
-			GET_IF(int32_t, c, char);
-
-			GET_IF(int32_t, f, float);
-			GET_IF(int32_t, d, double);
-			break;
-		}
-
-		case U64: {
-			GET_IF(uint64_t, u8, uint8_t);
-			GET_IF(uint64_t, u16, uint16_t);
-			GET_IF(uint64_t, u32, uint32_t);
-			GET_IF(uint64_t, u64, uint64_t);
-
-			GET_IF(uint64_t, i8, int8_t);
-			GET_IF(uint64_t, i16, int16_t);
-			GET_IF(uint64_t, i32, int32_t);
-			GET_IF(uint64_t, i64, int64_t);
-
-			GET_IF(uint64_t, c, char);
-
-			GET_IF(uint64_t, f, float);
-			GET_IF(uint64_t, d, double);
-			break;
-		}
-
-		case I64: {
-			GET_IF(int64_t, u8, uint8_t);
-			GET_IF(int64_t, u16, uint16_t);
-			GET_IF(int64_t, u32, uint32_t);
-			GET_IF(int64_t, u64, uint64_t);
-
-			GET_IF(int64_t, i8, int8_t);
-			GET_IF(int64_t, i16, int16_t);
-			GET_IF(int64_t, i32, int32_t);
-			GET_IF(int64_t, i64, int64_t);
-
-			GET_IF(int64_t, c, char);
-
-			GET_IF(int64_t, f, float);
-			GET_IF(int64_t, d, double);
-			break;
-		}
-
-		case F32: {
-			GET_IF(float, u8, uint8_t);
-			GET_IF(float, u16, uint16_t);
-			GET_IF(float, u32, uint32_t);
-			GET_IF(float, u64, uint64_t);
-
-			GET_IF(float, i8, int8_t);
-			GET_IF(float, i16, int16_t);
-			GET_IF(float, i32, int32_t);
-			GET_IF(float, i64, int64_t);
-
-			GET_IF(float, c, char);
-
-			GET_IF(float, f, float);
-			GET_IF(float, d, double);
-			break;
-		}
-
-		case F64: {
-			GET_IF(double, u8, uint8_t);
-			GET_IF(double, u16, uint16_t);
-			GET_IF(double, u32, uint32_t);
-			GET_IF(double, u64, uint64_t);
-
-			GET_IF(double, i8, int8_t);
-			GET_IF(double, i16, int16_t);
-			GET_IF(double, i32, int32_t);
-			GET_IF(double, i64, int64_t);
-
-			GET_IF(double, c, char);
-
-			GET_IF(double, f, float);
-			GET_IF(double, d, double);
-			break;
-		}
-		}
-
-		return succes;
 	}
 
 }

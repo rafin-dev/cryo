@@ -28,9 +28,7 @@ add_executable(cryo src/main.cpp
         src/runtime/CryoStack.h 
         src/runtime/CryoStack.cpp
         src/runtime/TypeID.h
-        src/runtime/TypeID.cpp 
-        src/runtime/raylib_bindings.h
-        src/runtime/raylib_bindings.cpp)
+        )
 
 set_property(TARGET cryo PROPERTY CXX_STANDARD 23)
 

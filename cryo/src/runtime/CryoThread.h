@@ -14,7 +14,7 @@ namespace cryo::runtime {
 		CryoThread(const parser::FunctionDefinitionNode* func, const CryoContext* context);
 		~CryoThread();
 
-		void run(const std::vector<ExpressionResult>& param = {});
+		void run(const std::vector<CryoValue>& param = {});
 
 	private:
 		enum RuntimeFlags {
@@ -30,7 +30,7 @@ namespace cryo::runtime {
 
 		RuntimeFlags m_Flag = None;
 		bool m_ReturnHasValue = false;
-		ExpressionResult m_ReturnValue;
+		CryoValue m_ReturnValue;
 
 		void execute_node(const parser::Node* node);
 
@@ -46,18 +46,16 @@ namespace cryo::runtime {
 
 		void execute_print_node(const parser::PrintNode* print);
 
-		uint64_t get_loop_count(ExpressionResult result);
+		uint64_t get_loop_count(CryoValue result);
 
 		std::optional<bool> evaluate_condition(const parser::Node* node);
 
-		std::optional<ExpressionResult> evaluate_expression(const parser::Node* node);
-		std::optional<ExpressionResult> evaluate_literal_node(const parser::LiteralNode* node);
-		std::optional<ExpressionResult> evaluate_identifier_node(const parser::IdentifierNode* node);
-		std::optional<ExpressionResult> evaluate_binary_operation(const parser::BinaryOperation* op);
-		std::optional<ExpressionResult> evaluate_unary_operation(const parser::UnaryOperation* op);
-		std::optional<ExpressionResult> evaluate_function_call_node(const parser::FunctionCallNode* func_call);
-
-		bool assign_variable_value(const TypeID var_type, const uint32_t var_location, const ExpressionResult& value);
+		std::optional<CryoValue> evaluate_expression(const parser::Node* node);
+		std::optional<CryoValue> evaluate_literal_node(const parser::LiteralNode* node);
+		std::optional<CryoValue> evaluate_identifier_node(const parser::IdentifierNode* node);
+		std::optional<CryoValue> evaluate_binary_operation(const parser::BinaryOperation* op);
+		std::optional<CryoValue> evaluate_unary_operation(const parser::UnaryOperation* op);
+		std::optional<CryoValue> evaluate_function_call_node(const parser::FunctionCallNode* func_call);
 	};
 
 }

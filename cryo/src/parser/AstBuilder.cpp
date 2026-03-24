@@ -232,7 +232,6 @@ namespace cryo::parser {
     }
 
     std::unique_ptr<Node> AstBuilder::build_variable_declaration_ast() {
-        auto var_decl = std::make_unique<VariableDeclarationNode>();
         const auto var_id = advance();
 
         if (var_id.Type == TokenType::END_OF_FILE) {
@@ -244,28 +243,7 @@ namespace cryo::parser {
             return nullptr;
         }
 
-        if (const auto var_type_operator = advance(); var_type_operator.Type != TokenType::END_OF_FILE) {
-            if (var_type_operator.Type != TokenType::COLON) {
-                push_error(CE_INVALID_TOKEN, "Expected type operator ':' after variable identifier!");
-                return nullptr;
-            }
-        } else {
-            push_error(CE_UNEXPECTED_END, "Expected type operator ':' after variable identifier, found nothing!");
-            return nullptr;
-        }
-
-        auto& var_type = advance();
-        if (var_type.Type == TokenType::END_OF_FILE) {
-            push_error(CE_UNEXPECTED_END, "Expected type identifier after type operator ':', found nothing!");
-            return nullptr;
-        }
-        if (var_type.Type != TokenType::IDENTIFIER) {
-            push_error(CE_INVALID_TOKEN, "Expected type identifier after type operator ':'!");
-            return nullptr;
-        }
-
-        var_decl->VariableIdentifier = std::make_unique<IdentifierNode>(var_id);
-        var_decl->TypeIdentifier = std::make_unique<IdentifierNode>(var_type);
+        auto var_decl = std::make_unique<VariableDeclarationNode>(var_id);
 
         switch (auto& semicolon_or_assign = advance(); semicolon_or_assign.Type) {
             case TokenType::COMMA:
