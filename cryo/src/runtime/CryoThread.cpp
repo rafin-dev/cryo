@@ -13,7 +13,7 @@ namespace cryo::runtime {
 	CryoThread::~CryoThread() {
 	}
 
-	void CryoThread::run(const std::vector<ExpressionResult>& param) {
+	void CryoThread::run(const std::vector<CryoValue>& param) {
 		m_Stack.push_function_call();
 		execute_node_block(m_Function->Body.get());
 		if (m_Flag != None && m_Flag != Return) {
@@ -198,7 +198,7 @@ namespace cryo::runtime {
 		m_ReturnValue = std::move(result.value());
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
+	std::optional<CryoValue> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
 		auto func = m_Context->get_function(func_call->FuncID->Identifier.lexeme);
 		const InternalFunction* internal_func = nullptr;
 		if (func == nullptr) {
@@ -212,7 +212,7 @@ namespace cryo::runtime {
 		}
 		
 		// Resolve parameters expressions
-		std::vector<ExpressionResult> params;
+		std::vector<CryoValue> params;
 		params.reserve(func_call->Arguments->Block.size());
 		for (auto& expr : func_call->Arguments->Block) {
 			auto result = evaluate_expression(expr.get());
@@ -264,13 +264,10 @@ namespace cryo::runtime {
 		}
 		auto value = std::move(result.value());
 
-		if (auto u32 = std::get_if<uint32_t>(&value)) {
-			std::cout << *u32;
-		}
-		else if (auto i32 = std::get_if<int32_t>(&value)) {
+		if (auto i32 = std::get_if<int64_t>(&value)) {
 			std::cout << *i32;
 		}
-		else if (auto f32 = std::get_if<float>(&value)) {
+		else if (auto f32 = std::get_if<double>(&value)) {
 			std::cout << *f32;
 		}
 		else if (auto b8 = std::get_if<bool>(&value)) {
@@ -282,30 +279,12 @@ namespace cryo::runtime {
 		std::cout << std::endl;
 	}
 
-	uint64_t CryoThread::get_loop_count(ExpressionResult result)
+	uint64_t CryoThread::get_loop_count(CryoValue result)
 	{
-		if (auto u8 = std::get_if<uint8_t>(&result)) {
-			return *u8;
-		}
-		if (auto i8 = std::get_if<int8_t>(&result)) {
-			return *i8;
-		}
-		if (auto u16 = std::get_if<uint16_t>(&result)) {
-			return *u16;
-		}
-		if (auto i16 = std::get_if<int16_t>(&result)) {
-			return *i16;
-		}
-		if (auto u32 = std::get_if<uint32_t>(&result)) {
-			return *u32;
-		}
-		if (auto i32 = std::get_if<int32_t>(&result)) {
-			return *i32;
-		}
-		if (auto u64 = std::get_if<uint64_t>(&result)) {
-			return *u64;
-		}
 		if (auto i64 = std::get_if<int64_t>(&result)) {
+			if (*i64 < 0) {
+				throw std::runtime_error("Loop count cannot be a negative value!");
+			}
 			return *i64;
 		}
 
@@ -325,7 +304,7 @@ namespace cryo::runtime {
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_expression(const parser::Node* node)
+	std::optional<CryoValue> CryoThread::evaluate_expression(const parser::Node* node)
 	{
 		if (CHECK_NODE_TYPE(lit, parser::LiteralNode, node)) {
 			return evaluate_literal_node(lit);
@@ -346,28 +325,28 @@ namespace cryo::runtime {
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_literal_node(const parser::LiteralNode* node)
+	std::optional<CryoValue> CryoThread::evaluate_literal_node(const parser::LiteralNode* node)
 	{
 		if (CHECK_NODE_TYPE(integer, parser::IntegerLiteralNode, node)) {
-			return ExpressionResult(std::stoi(integer->Value.lexeme));
+			return CryoValue(std::stoi(integer->Value.lexeme));
 		}
 		else if (CHECK_NODE_TYPE(floating, parser::FloatLiteralNode, node)) {
-			return ExpressionResult(std::stof(floating->Value.lexeme));
+			return CryoValue(std::stof(floating->Value.lexeme));
 		}
 		else if (CHECK_NODE_TYPE(boolean, parser::BoolLiteralNode, node)) {
-			return ExpressionResult(boolean->Value);
+			return CryoValue(boolean->Value);
 		}
 		else if (CHECK_NODE_TYPE(character, parser::CharLiteralNode, node)) {
-			return ExpressionResult(character->Character);
+			return CryoValue(character->Character);
 		}
 		else if (CHECK_NODE_TYPE(string, parser::StringLiteralNode, node)) {
-			return ExpressionResult(string->Value);
+			return CryoValue(string->Value);
 		}
 
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_identifier_node(const parser::IdentifierNode* node)
+	std::optional<CryoValue> CryoThread::evaluate_identifier_node(const parser::IdentifierNode* node)
 	{
 		auto var = m_Stack.get_variable(node->Identifier.lexeme);
 		if (var == nullptr) {
@@ -382,20 +361,9 @@ namespace cryo::runtime {
 return op((*left), (*r)); }
 
 	template<typename LEFT, typename op>
-	std::optional<ExpressionResult> operate_numeric_value(const ExpressionResult& left, const ExpressionResult& right) {
+	std::optional<CryoValue> operate_numeric_value(const CryoValue& left, const CryoValue& right) {
 		op operation;
 		if (auto left_value = std::get_if<LEFT>(&left)) {
-			CHECK_AND_EVALUATE(left_value, operation, uint8_t, ru8);
-			CHECK_AND_EVALUATE(left_value, operation, int8_t, ri8);
-							   
-			CHECK_AND_EVALUATE(left_value, operation, uint16_t, ru16);
-			CHECK_AND_EVALUATE(left_value, operation, int16_t, ri16);
-							   
-			CHECK_AND_EVALUATE(left_value, operation, uint32_t, ru32);
-			CHECK_AND_EVALUATE(left_value, operation, int32_t, ri32);
-			CHECK_AND_EVALUATE(left_value, operation, float, rf32);
-							   
-			CHECK_AND_EVALUATE(left_value, operation, uint64_t, ru64);
 			CHECK_AND_EVALUATE(left_value, operation, int64_t, ri64);
 			CHECK_AND_EVALUATE(left_value, operation, double, rf64);
 		}
@@ -411,24 +379,12 @@ return op((*left), (*r)); }
 
 #define SWITCH_LABEL(tkType, op) case tkType: { \
 	OPERATE_NUMERIC(bool, b8, op); \
-	OPERATE_NUMERIC(char, c8, op); \
-	OPERATE_NUMERIC(uint8_t, u8, op);	\
-	OPERATE_NUMERIC(int8_t, i8, op);		\
-												\
-	OPERATE_NUMERIC(uint16_t, u16, op);	\
-	OPERATE_NUMERIC(int16_t, i16, op);	\
-												\
-	OPERATE_NUMERIC(uint32_t, u32, op);	\
-	OPERATE_NUMERIC(int32_t, i32, op);	\
-	OPERATE_NUMERIC_F(float, float, f32, op);		\
-												\
-	OPERATE_NUMERIC(uint64_t, u64, op);	\
 	OPERATE_NUMERIC(int64_t, i64, op);	\
 	OPERATE_NUMERIC_F(double, double, f64, op);	\
 	break;										\
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_binary_operation(const parser::BinaryOperation* op)
+	std::optional<CryoValue> CryoThread::evaluate_binary_operation(const parser::BinaryOperation* op)
 	{
 		auto left_result = evaluate_expression(op->LeftValue.get());
 		auto& operation = op->Operator;
@@ -458,7 +414,7 @@ return op((*left), (*r)); }
 		return {};
 	}
 
-	std::optional<ExpressionResult> CryoThread::evaluate_unary_operation(const parser::UnaryOperation* op)
+	std::optional<CryoValue> CryoThread::evaluate_unary_operation(const parser::UnaryOperation* op)
 	{
 		auto v_result = evaluate_expression(op->Value.get());
 		auto& operation = op->Operator;

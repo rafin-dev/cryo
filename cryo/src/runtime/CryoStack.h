@@ -20,7 +20,7 @@ namespace cryo::runtime {
 		CryoStack(uint64_t stack_size = 8000000);
 		~CryoStack();
 
-		std::expected<ExpressionResult*, push_error> push_variable(const std::string& name);
+		std::expected<CryoValue*, push_error> push_variable(const std::string& name);
 
 		void push_function_call();
 		bool pop_function_call();
@@ -28,7 +28,7 @@ namespace cryo::runtime {
 		void push_scope();
 		bool pop_scope();
 
-		ExpressionResult* get_variable(const std::string& name);
+		CryoValue* get_variable(const std::string& name);
 
 		struct VariableData {
 			std::string Name;

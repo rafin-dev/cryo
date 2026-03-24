@@ -16,7 +16,7 @@ namespace cryo::runtime {
 
 		search_NodeBlock(m_SyntaxTree.get());
 
-		set_internal_function("internal", [](const std::vector<ExpressionResult>& params) -> ExpressionResult {
+		set_internal_function("internal", [](const std::vector<CryoValue>& params) -> CryoValue {
 			std::cout << std::get<std::string>(params[0]) << std::endl;
 			return "OMG";
 			});

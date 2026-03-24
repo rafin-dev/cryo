@@ -12,14 +12,14 @@ namespace cryo::runtime {
 	CryoStack::~CryoStack() {
 	}
 
-	std::expected<ExpressionResult*, push_error> CryoStack::push_variable(const std::string& name) {
+	std::expected<CryoValue*, push_error> CryoStack::push_variable(const std::string& name) {
 		if (m_CallStack.top().Variables.contains(name)) {
 			return std::unexpected(NameAlredyUsed);
 		}
 
 		uint32_t location = m_StackCounter;
 
-		m_StackCounter += sizeof(ExpressionResult);
+		m_StackCounter += sizeof(CryoValue);
 		if (m_StackCounter >= m_Buffer.size()) {
 			return std::unexpected(StackOverflow);
 		}
@@ -28,7 +28,7 @@ namespace cryo::runtime {
 		m_CallStack.top().Variables.insert(std::make_pair(name, m_Variables.size() - 1));
 		m_CallStack.top().Scopes.top()++;
 
-		return reinterpret_cast<ExpressionResult*>(m_Buffer.data() + location);
+		return reinterpret_cast<CryoValue*>(m_Buffer.data() + location);
 	}
 
 	void CryoStack::push_function_call() {
@@ -71,7 +71,7 @@ namespace cryo::runtime {
 		return true;
 	}
 
-	ExpressionResult* CryoStack::get_variable(const std::string& name) {
+	CryoValue* CryoStack::get_variable(const std::string& name) {
 		auto ite = m_CallStack.top().Variables.find(name);
 		if (ite == m_CallStack.top().Variables.end()) {
 			return nullptr;
@@ -79,7 +79,7 @@ namespace cryo::runtime {
 
 		auto& var_data = m_Variables[ite->second];
 
-		return (ExpressionResult*)(m_Buffer.data() + var_data.Location);
+		return (CryoValue*)(m_Buffer.data() + var_data.Location);
 	}
 
 	const CryoStack::VariableData* CryoStack::get_var_data(const std::string& name)
