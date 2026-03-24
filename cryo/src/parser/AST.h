@@ -36,14 +36,10 @@ namespace cryo::parser {
         ~ScopeNode() override = default;
     };
 
-    struct VariableNode : public Node {
-        ~VariableNode() override = default;
-
-        std::unique_ptr<IdentifierNode> TypeIdentifier;
-        std::unique_ptr<IdentifierNode> VariableIdentifier;
-    };
-
-    struct VariableDeclarationNode : public VariableNode {
+    struct VariableDeclarationNode : public IdentifierNode {
+        VariableDeclarationNode(Token id)
+            : IdentifierNode(std::move(id)) 
+        { }
         ~VariableDeclarationNode() override = default;
     };
 

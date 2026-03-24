@@ -3,9 +3,14 @@ fn main() {
 
    // Example of internal function, defined in the interpreter
    print internal("Hi!");
+
+   var test = 10;
+   print test;
+   test = "ola";
+   print test;
 }
 
-fn greet(var i: i32, var i2: f32) {
+fn greet(var i, var i2) {
    print "Hi, i'm a different function!";
    print i;
    print i2;

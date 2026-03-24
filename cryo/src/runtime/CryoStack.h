@@ -4,6 +4,7 @@
 #include "parser/AST.h"
 
 #include <stack>
+#include <expected>
 #include <vector>
 
 namespace cryo::runtime {
@@ -19,7 +20,7 @@ namespace cryo::runtime {
 		CryoStack(uint64_t stack_size = 8000000);
 		~CryoStack();
 
-		std::optional<push_error> push_variable(const std::string& name, TypeID type);
+		std::expected<ExpressionResult*, push_error> push_variable(const std::string& name);
 
 		void push_function_call();
 		bool pop_function_call();
@@ -27,17 +28,11 @@ namespace cryo::runtime {
 		void push_scope();
 		bool pop_scope();
 
-		template<typename T>
-		T* get_variable_as_cpp_type(const std::string& name);
-
-		template<typename T>
-		T* get_variable_as_cpp_type(uint32_t location);
+		ExpressionResult* get_variable(const std::string& name);
 
 		struct VariableData {
-			TypeID Type = VOID;
 			std::string Name;
 			uint32_t Location = 0;
-			uint32_t Size = 0;
 		};
 
 		const VariableData* get_var_data(const std::string& name);
@@ -55,29 +50,5 @@ namespace cryo::runtime {
 		std::vector<VariableData> m_Variables;
 		uint64_t m_StackCounter = 0;
 	};
-
-	template<typename T>
-	inline T* CryoStack::get_variable_as_cpp_type(const std::string& name) {
-		auto ite = m_CallStack.top().Variables.find(name);
-		if (ite == m_CallStack.top().Variables.end()) {
-			return nullptr;
-		}
-
-		auto& var_data = m_Variables[ite->second];
-		if (var_data.Size != sizeof(T)) {
-			return nullptr;
-		}
-
-		return (T*)(m_Buffer.data() + var_data.Location);
-	}
-
-	template<typename T>
-	inline T* CryoStack::get_variable_as_cpp_type(uint32_t location)
-	{
-		if ((location + sizeof(T)) >= m_Buffer.size()) {
-			throw std::runtime_error("Invalid access");
-		}
-		return (T*)(m_Buffer.data() + location);
-	}
 
 }
