@@ -409,6 +409,23 @@ return op((*left), (*r)); }
 			SWITCH_LABEL(parser::TokenType::LESS_EQUAL, std::less_equal);
 			SWITCH_LABEL(parser::TokenType::GREATER, std::greater);
 			SWITCH_LABEL(parser::TokenType::GREATER_EQUAL, std::greater_equal);
+			
+		case parser::TokenType::AND_AND: {
+			auto left = std::get_if<bool>(&left_value);
+			auto right = std::get_if<bool>(&right_value);
+			if (left != nullptr && right != nullptr) {
+				return (*left) && (*right);
+			}
+			return {};
+		}
+		case parser::TokenType::OR_OR: {
+			auto left = std::get_if<bool>(&left_value);
+			auto right = std::get_if<bool>(&right_value);
+			if (left != nullptr && right != nullptr) {
+				return (*left) || (*right);
+			}
+			return {};
+		}
 		}
 
 		return {};

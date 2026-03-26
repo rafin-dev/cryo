@@ -31,6 +31,9 @@ int main(const int argc, const char ** argv) {
     context.set_internal_function("rlWindowShouldClose", cryo::runtime::raylib::rl_window_should_close);
     context.set_internal_function("rlBeginDrawing", cryo::runtime::raylib::rl_begin_drawing);
     context.set_internal_function("rlEndDrawing", cryo::runtime::raylib::rl_end_drawing);
+    context.set_internal_function("rlClearBackground", cryo::runtime::raylib::rl_clear_background);
+    context.set_internal_function("rlDrawRectangle", cryo::runtime::raylib::rl_draw_rectangle);
+    context.set_internal_function("rlIsSpaceDown", cryo::runtime::raylib::rl_is_space_pressed);
 
     context.run("main");
 }

@@ -1,11 +1,57 @@
 fn main() {
-   rlInitWindow(720, 480, "title!");
+   rlInitWindow(1280, 720, "Jump Game");
 
-   while (!rlWindowShouldClose()) {
+   var floor = 420;
+
+   var playerY = 0;
+   var playerVspeed = 0;
+   var playerScore = 0;
+
+   var enemyX = 1280;
+
+   var close = false;
+   while (!rlWindowShouldClose() && !close) {
+      playerY = playerY + playerVspeed;
+      playerVspeed = playerVspeed - 3;
+      enemyX = enemyX - 10 - playerScore * 2;
+
+      if (playerY < 0) {
+         playerY = 0;
+      }
+
+      if (playerY == 0 && rlIsSpaceDown()) {
+         playerVspeed = 50;
+      }
+
+      if (playerY < 100 && 50 < enemyX && enemyX < 250) {
+         close = true;
+      }
+      else if (enemyX < -100) {
+         enemyX = 1280;
+         playerScore = playerScore + 1;
+      }
+
       rlBeginDrawing();
+
+      rlClearBackground(50, 200, 255, 255);
+
+      rlDrawRectangle(0, 520, 1280, 200, 0, 255, 0, 255);
+
+      rlDrawRectangle(150, floor - playerY, 100, 100, 255, 0, 0, 255);
+
+      rlDrawRectangle(enemyX, floor, 100, 100, 150, 150, 150, 255);
 
       rlEndDrawing();
    }
 
    rlCloseWindow();
+
+   print "Your score was:";
+   var calcScore = playerScore * playerScore / 2;
+   if (playerScore > calcScore) {
+      print playerScore;
+   }
+   else {
+      print calcScore;
+   }
 }
