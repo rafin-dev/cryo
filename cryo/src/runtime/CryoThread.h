@@ -44,8 +44,6 @@ namespace cryo::runtime {
 		void execute_loop(const parser::LoopNode* ln);
 		void execute_return_node(const parser::ReturnStatementNode* return_statement);
 
-		void execute_print_node(const parser::PrintNode* print);
-
 		uint64_t get_loop_count(CryoValue result);
 
 		std::optional<bool> evaluate_condition(const parser::Node* node);

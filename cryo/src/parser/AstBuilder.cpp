@@ -212,14 +212,6 @@ namespace cryo::parser {
 
             case TokenType::SEMICOLON: break;
 
-                // Temporary
-            case TokenType::PRINT: {
-                if (auto print = build_print_ast(); print != nullptr) {
-                    scope_stack.top()->Block.emplace_back(std::move(print));
-                }
-                break;
-            }
-
             default: {
                 push_error(CE_INVALID_TOKEN,
                     std::format("Unexpected token of type {}!", TokenType_to_string(peek().Type)));
@@ -589,19 +581,6 @@ namespace cryo::parser {
         }
 
         return return_node;
-    }
-
-    std::unique_ptr<Node> AstBuilder::build_print_ast() {
-        auto print_node = std::make_unique<PrintNode>();
-        advance();
-
-        auto expr = build_expression_ast();
-        if (expr == nullptr) {
-            return nullptr;
-        }
-        print_node->Value = std::move(expr);
-
-        return std::move(print_node);
     }
 
     std::span<const Token> AstBuilder::get_condition() {

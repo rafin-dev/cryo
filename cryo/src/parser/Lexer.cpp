@@ -196,6 +196,5 @@ namespace cryo::parser {
         { "return",       TokenType::RETURN },
         { "continue",     TokenType::CONTINUE },
         { "break",        TokenType::BREAK },
-        { "print",        TokenType::PRINT }
     };
 }

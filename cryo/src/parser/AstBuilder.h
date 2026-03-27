@@ -27,9 +27,6 @@ namespace cryo::parser {
         std::unique_ptr<Node> build_loop_statement_node();
         std::unique_ptr<Node> build_return_statement_node();
 
-        // Temporary
-        std::unique_ptr<Node> build_print_ast();
-
         std::span<const Token> get_condition();
         std::optional<std::span<Token>> get_expression_tokens();
         std::optional<uint32_t> get_least_priority_operator(std::span<const Token> expression);

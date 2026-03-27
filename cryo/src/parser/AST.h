@@ -186,10 +186,4 @@ namespace cryo::parser {
         Token LexerToken;
     };
 
-    struct PrintNode : public Node {
-        ~PrintNode() override = default;
-
-        std::unique_ptr<Node> Value;
-    };
-
 }

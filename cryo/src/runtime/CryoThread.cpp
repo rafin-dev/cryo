@@ -36,9 +36,6 @@ namespace cryo::runtime {
 		else if (CHECK_NODE_TYPE(block, parser::NodeBlock, node)) {
 			execute_node_block(block);
 		}
-		else if (CHECK_NODE_TYPE(print, parser::PrintNode, node)) {
-			execute_print_node(print);
-		}
 		else if (CHECK_NODE_TYPE(ite, parser::IfThenElseNode, node)) {
 			execute_if_then_else_node(ite);
 		}
@@ -255,28 +252,6 @@ namespace cryo::runtime {
 		else {
 			return (*internal_func)(params);
 		}
-	}
-
-	void CryoThread::execute_print_node(const parser::PrintNode* print) {
-		auto result = evaluate_expression(print->Value.get());
-		if (!result.has_value()) {
-			throw std::runtime_error("Failed to evalueate expression!");
-		}
-		auto value = std::move(result.value());
-
-		if (auto i32 = std::get_if<int64_t>(&value)) {
-			std::cout << *i32;
-		}
-		else if (auto f32 = std::get_if<double>(&value)) {
-			std::cout << *f32;
-		}
-		else if (auto b8 = std::get_if<bool>(&value)) {
-			std::cout << (*b8 ? "true" : "false");
-		}
-		else if (auto str = std::get_if<std::string>(&value)) {
-			std::cout << *str;
-		}
-		std::cout << std::endl;
 	}
 
 	uint64_t CryoThread::get_loop_count(CryoValue result)
