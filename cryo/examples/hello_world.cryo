@@ -1,23 +1,20 @@
 fn main() {
-   print hi();
-
-   // Example of internal function, defined in the interpreter
-   print internal("Hi!");
+   println(hi());
 
    var test = 10;
-   print test;
+   println(test);
    test = "ola";
-   print test;
+   println(test);
 }
 
 fn greet(var i, var i2) {
-   print "Hi, i'm a different function!";
-   print i;
-   print i2;
+   println("Hi, i'm a different function!");
+   println(i);
+   println(i2);
 }
 
 fn hi() {
-   print "hello";
+   println("hello");
    greet(25, 10.6);
    return "Hello, World!";
 }

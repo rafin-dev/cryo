@@ -10,8 +10,8 @@
 #include <print>
 
 int main(const int argc, const char ** argv) {
-    if (argc == 1) {
-        std::cerr << "Missing source file" << std::endl;
+    if (argc != 2) {
+        std::cerr << "Invalid number of arguments!" << std::endl;
         return -1;
     }
 
