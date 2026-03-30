@@ -19,15 +19,16 @@ namespace cryo::runtime {
 		set_internal_function("println", [](const std::vector<CryoValue>& params) -> CryoValue {
 			for (auto& param : params) {
 				if (auto str = std::get_if<std::string>(&param)) {
-					std::cout << *str << std::endl;
+					std::cout << *str;
 				}
 				else if (auto integer = std::get_if<int64_t>(&param)) {
-					std::cout << *integer << std::endl;
+					std::cout << *integer;
 				}
 				else if (auto floating = std::get_if<double>(&param)) {
-					std::cout << *floating << std::endl;
+					std::cout << *floating;
 				}
 			}
+			std::cout << std::endl;
 			return CryoValue();
 			});
 	}

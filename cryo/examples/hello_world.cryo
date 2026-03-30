@@ -2,7 +2,9 @@ fn main() {
    println(hi());
 
    var test = 10;
-   println(test);
+   if (test > 5) {
+      println(test);
+   }
    test = "ola";
    println(test);
 }

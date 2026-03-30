@@ -86,5 +86,4 @@ namespace cryo::parser {
         uint32_t IndexFromSource;
         TokenType Type;
     };
-
 }

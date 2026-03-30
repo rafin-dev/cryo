@@ -17,7 +17,7 @@ namespace cryo::parser {
         std::unique_ptr<FunctionDefinitionNode> build_function_ast();
         std::unique_ptr<ScopeNode> build_function_body_ast(const std::string& id);
         std::unique_ptr<ScopeNode> build_scope_node();
-        std::unique_ptr<Node> build_variable_declaration_ast();
+        std::unique_ptr<Node> build_variable_declaration_ast(bool is_param = false);
         std::unique_ptr<Node> build_expression_ast();
         std::unique_ptr<Node> build_expression_component_ast(std::span<const Token> tokens);
         std::unique_ptr<Node> build_function_call_ast(const std::span<const Token> tokens);

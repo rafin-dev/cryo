@@ -55,14 +55,14 @@ namespace cryo::parser {
             // Parameters
             advance();
             while (peek().Type == TokenType::VAR) {
-                // This is very hacked in, TODO: remake in the future
-                auto param = build_variable_declaration_ast();
+                auto param = build_variable_declaration_ast(true);
                 if (!param) {
                     return nullptr;
                 }
+
+                // TODO: support for default parameter value
                 auto* param_ptr = dynamic_cast<VariableDeclarationNode*>(param.release());
                 if (!param_ptr) {
-                    // TODO: this is part of why its hacked in
                     return nullptr;
                 }
                 function_node->Parameters.emplace_back(param_ptr);
@@ -223,7 +223,7 @@ namespace cryo::parser {
         return body;
     }
 
-    std::unique_ptr<Node> AstBuilder::build_variable_declaration_ast() {
+    std::unique_ptr<Node> AstBuilder::build_variable_declaration_ast(bool is_param) {
         const auto var_id = advance();
 
         if (var_id.Type == TokenType::END_OF_FILE) {
@@ -239,7 +239,14 @@ namespace cryo::parser {
 
         switch (auto& semicolon_or_assign = advance(); semicolon_or_assign.Type) {
             case TokenType::COMMA:
-            case TokenType::RIGHT_PAREN:
+            case TokenType::RIGHT_PAREN: {
+                if (is_param) {
+                    return var_decl;
+                }
+                push_error(CE_INVALID_TOKEN, "Expected semicolon or assignment after variable declaration!");
+                return nullptr;
+            }
+
             case TokenType::SEMICOLON: {
                 return var_decl;
             }
