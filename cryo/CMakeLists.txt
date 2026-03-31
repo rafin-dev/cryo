@@ -38,3 +38,5 @@ target_precompile_headers(cryo
     PUBLIC
         src/cryopch.h
 )
+
+set_target_properties(cryo PROPERTIES LINK_FLAGS -Wl,--stack,16000000)

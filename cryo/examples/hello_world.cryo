@@ -2,10 +2,17 @@ fn main() {
    println(hi());
 
    var test = 10;
-   if (test > 5) {
+   if (test < 5) {
       println(test);
    }
+   else {
+      println("not this time");
+   }
    test = "ola";
+   println(test);
+
+   test = 10;
+   test += 58;
    println(test);
 }
 

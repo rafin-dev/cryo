@@ -52,27 +52,19 @@ namespace cryo::parser {
             SINGLE_CHAR_TOKEN('}', TokenType::RIGHT_BRACE)
             SINGLE_CHAR_TOKEN(',', TokenType::COMMA)
             SINGLE_CHAR_TOKEN('.', TokenType::DOT)
-            SINGLE_CHAR_TOKEN('+', TokenType::PLUS)
-            SINGLE_CHAR_TOKEN('*', TokenType::ASTERISK)
             SINGLE_CHAR_TOKEN('%', TokenType::REMAINDER)
             SINGLE_CHAR_TOKEN(';', TokenType::SEMICOLON)
             SINGLE_CHAR_TOKEN(':', TokenType::COLON)
 
+            TWO_CHAR_TOKEN('+', '=', TokenType::PLUS, TokenType::PLUS_EQUAL)
+            TWO_CHAR_TOKEN('-', '=', TokenType::MINUS, TokenType::MINUS_EQUAL)
+            TWO_CHAR_TOKEN('*', '=', TokenType::ASTERISK, TokenType::ASTERISK_EQUAL)
             TWO_CHAR_TOKEN('!', '=', TokenType::BANG, TokenType::BANG_EQUAL)
             TWO_CHAR_TOKEN('=', '=', TokenType::EQUAL, TokenType::EQUAL_EQUAL)
             TWO_CHAR_TOKEN('>', '=', TokenType::GREATER, TokenType::GREATER_EQUAL)
             TWO_CHAR_TOKEN('<', '=', TokenType::LESS, TokenType::LESS_EQUAL)
             TWO_CHAR_TOKEN('&', '&', TokenType::AND, TokenType::AND_AND)
             TWO_CHAR_TOKEN('|', '|', TokenType::OR, TokenType::OR_OR)
-
-            case '-': {
-                current_char++;
-                if (current_char < m_SrcCode->size() && m_SrcCode->at(current_char) == '>') {
-                    return Token{"->", m_CurrentLine, current_char, TokenType::RETURN_TYPE};
-                } else {
-                    return Token{ "-", m_CurrentLine, current_char, TokenType::MINUS };
-                }
-            }
 
             case '/': {
                 uint32_t start = current_char;
@@ -85,7 +77,11 @@ namespace cryo::parser {
                         }
                     }
                     return current_char - start;
-                } else {
+                }
+                else if (current_char < m_SrcCode->size() && m_SrcCode->at(current_char) == '=') {
+                    return Token{ "/=", m_CurrentLine, current_char, TokenType::SLASH_EQUAL };
+                }
+                else {
                     return Token{"/", m_CurrentLine, current_char, TokenType::SLASH};
                 }
             }

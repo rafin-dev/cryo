@@ -22,10 +22,6 @@ namespace cryo::parser {
         }
         str += " )";
 
-        if (func->ReturnType) {
-            str += " -> " + func->ReturnType->Identifier.lexeme;
-        }
-
         str += "\n{\n" + nodeBlock_to_string(func->Body.get()) + "\n}";
         return str;
     }

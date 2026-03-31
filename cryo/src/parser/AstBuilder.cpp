@@ -93,17 +93,6 @@ namespace cryo::parser {
             return nullptr;
         }
 
-        if (peek_next().Type == TokenType::RETURN_TYPE) {
-            advance();
-
-            auto& return_type = advance();
-            if (return_type.Type != TokenType::IDENTIFIER) {
-                push_error(CE_UNEXPECTED_TOKEN, "Expected type identifier for the function return type!");
-                return nullptr;
-            }
-            function_node->ReturnType = std::make_unique<IdentifierNode>(return_type);
-        }
-
         if (auto body = build_function_body_ast(function_node->Identifier->Identifier.lexeme); body != nullptr) {
             function_node->Body = std::move(body);
         }
@@ -399,16 +388,20 @@ namespace cryo::parser {
                 return op_node->Value != nullptr ? std::move(op_node) : nullptr;
             }
 
+            case TokenType::PLUS_EQUAL:
+            case TokenType::MINUS_EQUAL:
+            case TokenType::ASTERISK_EQUAL:
+            case TokenType::SLASH_EQUAL:
             case TokenType::EQUAL: {
                 auto ass = std::make_unique<AssignmentOperation>();
                 ass->Operator = operator_token;
-                auto left = remove_useless_paren(std::span(tokens.data(), op));
-                if (left.size() != 1 || left[0].Type != TokenType::IDENTIFIER) {
-                    // TODO: Error
-                    return nullptr;
-                }
-                ass->LeftValue = std::make_unique<IdentifierNode>(left[0]);
-                ass->RightValue = build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
+
+                ass->LeftValue = 
+                    build_expression_component_ast(remove_useless_paren(std::span(tokens.data(), op)));
+
+                ass->RightValue = 
+                    build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
+                
                 return ass;
             }
 
@@ -658,6 +651,10 @@ namespace cryo::parser {
         { TokenType::COMMA, 1 },
 
         // Assignment
+        { TokenType::PLUS_EQUAL, 1 },
+        { TokenType::MINUS_EQUAL, 1 },
+        { TokenType::SLASH_EQUAL, 1 },
+        { TokenType::ASTERISK_EQUAL, 1 },
         { TokenType::EQUAL, 1 },
 
         // Logical OR

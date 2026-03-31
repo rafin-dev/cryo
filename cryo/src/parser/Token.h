@@ -9,6 +9,7 @@ namespace cryo::parser {
 
         LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, // ( ) { }
         COMMA, DOT, MINUS, PLUS, SLASH, ASTERISK, REMAINDER, SEMICOLON, COLON, // , . - + / * ; :
+        PLUS_EQUAL, MINUS_EQUAL, SLASH_EQUAL, ASTERISK_EQUAL, // += -= /= *=
 
         BANG, BANG_EQUAL, // ! !=
         EQUAL, EQUAL_EQUAL, // = ==
@@ -16,8 +17,6 @@ namespace cryo::parser {
         LESS, LESS_EQUAL, // < <=
         AND, AND_AND, // & &&
         OR, OR_OR, // | ||
-
-        RETURN_TYPE, // ->
 
         STRING, INT, FLOAT, // "*" [1/2/3...] *.*
 
@@ -44,6 +43,10 @@ namespace cryo::parser {
             case TokenType::REMAINDER: return "%";
             case TokenType::SEMICOLON: return ";";
             case TokenType::COLON: return ":";
+            case TokenType::PLUS_EQUAL: return "+=";
+            case TokenType::MINUS_EQUAL: return "-=";
+            case TokenType::SLASH_EQUAL: return "/=";
+            case TokenType::ASTERISK_EQUAL: return "*=";
             case TokenType::BANG: return "!";
             case TokenType::BANG_EQUAL: return "!=";
             case TokenType::EQUAL: return "=";
@@ -54,7 +57,6 @@ namespace cryo::parser {
             case TokenType::LESS_EQUAL: return "<=";
             case TokenType::AND_AND: return "&&";
             case TokenType::OR_OR: return "||";
-            case TokenType::RETURN_TYPE: return "->";
             case TokenType::STRING: return "String";
             case TokenType::INT: return "Integer";
             case TokenType::FLOAT: return "Float";

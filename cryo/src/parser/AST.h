@@ -61,7 +61,7 @@ namespace cryo::parser {
     struct AssignmentOperation : public Node {
         ~AssignmentOperation() override = default;
 
-        std::unique_ptr<IdentifierNode> LeftValue;
+        std::unique_ptr<Node> LeftValue;
         Token Operator;
         std::unique_ptr<Node> RightValue;
     };
@@ -71,7 +71,6 @@ namespace cryo::parser {
 
         std::unique_ptr<IdentifierNode> Identifier;
         std::vector<std::unique_ptr<VariableDeclarationNode>> Parameters;
-        std::unique_ptr<IdentifierNode> ReturnType;
 
         std::unique_ptr<ScopeNode> Body;
     };

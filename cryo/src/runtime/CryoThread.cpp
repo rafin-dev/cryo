@@ -91,6 +91,28 @@ namespace cryo::runtime {
 		}
 	}
 
+	template<typename OP_int, typename OP_float>
+	void assign_and_op(CryoValue* left, CryoValue* right) {
+		OP_int int_op;
+		OP_float float_op;
+		if (int64_t* left_int = std::get_if<int64_t>(left)) {
+			if (int64_t* right_int = std::get_if<int64_t>(right)) {
+				*left_int = int_op(*left_int, *right_int);
+			}
+			else if (double* right_float = std::get_if<double>(right)) {
+				*left_int = float_op(*left_int, *right_float);
+			}
+		}
+		else if (double* left_float = std::get_if<double>(left)) {
+			if (int64_t* right_int = std::get_if<int64_t>(right)) {
+				*left_float = float_op(*left_float, *right_int);
+			}
+			else if (double* right_float = std::get_if<double>(right)) {
+				*left_float = float_op(*left_float, *right_float);
+			}
+		}
+	}
+
 	void CryoThread::execute_assignment_operation_node(const parser::AssignmentOperation* ass) {
 		auto expr_result = evaluate_expression(ass->RightValue.get());
 		if (!expr_result.has_value()) {
@@ -100,13 +122,47 @@ namespace cryo::runtime {
 		// Variable data needs to be retrieved after the expression is resolved
 		// Because expression may include function calls
 		// Which could make the m_Stack object perform realocations for it's variable data vector
-		// Invalidxating the pointer to the data
-		auto* var = m_Stack.get_variable(ass->LeftValue->Identifier.lexeme);
+		// Invalidating the pointer to the variable data
+		CryoValue* var = nullptr;
+		// Assignment directly to a variable
+		if (auto identifier = dynamic_cast<const parser::IdentifierNode*>(ass->LeftValue.get())) {
+			var = m_Stack.get_variable(identifier->Identifier.lexeme);
+		}
+		// TODO: other kinds of assignments
 		if (var == nullptr) {
 			throw std::runtime_error("Assignment for an unknwon variable");
 		}
 
-		*var = expr_result.value();
+		auto right = std::move(expr_result.value());
+		switch (ass->Operator.Type) {
+			case parser::TokenType::EQUAL: {
+				*var = right;
+				break;
+			}
+			
+			case parser::TokenType::PLUS_EQUAL: {
+				assign_and_op<std::plus<int64_t>, std::plus<double>>(var, &right);
+				break;
+			}
+
+			case parser::TokenType::MINUS_EQUAL: {
+				assign_and_op<std::minus<int64_t>, std::minus<double>>(var, &right);
+				break;
+			}
+
+			case parser::TokenType::SLASH_EQUAL: {
+				assign_and_op<std::multiplies<int64_t>, std::multiplies<double>>(var, &right);
+				break;
+			}
+
+			case parser::TokenType::ASTERISK_EQUAL: {
+				assign_and_op<std::divides<int64_t>, std::divides<double>>(var, &right);
+				break;
+			}
+
+			default:
+				throw std::runtime_error("Something went wrong when parsing!");
+		}
 	}
 
 	void CryoThread::execute_if_then_else_node(const parser::IfThenElseNode* ite) {

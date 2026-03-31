@@ -17,7 +17,7 @@ namespace cryo::runtime {
 
 	class CryoStack {
 	public:
-		CryoStack(uint64_t stack_size = 8000000);
+		CryoStack(uint64_t stack_size = 200000); // Default size of 200 kb
 		~CryoStack();
 
 		std::expected<CryoValue*, push_error> push_variable(const std::string& name);
