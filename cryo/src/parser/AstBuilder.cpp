@@ -418,7 +418,7 @@ namespace cryo::parser {
 
                 auto right = 
                     build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
-                if (auto* right_list = dynamic_cast<NodeBlock*>(left.get())) {
+                if (auto* right_list = dynamic_cast<NodeBlock*>(right.get())) {
                     for (auto& expr : right_list->Block) {
                         expr_list->Block.emplace_back(std::move(expr));
                     }

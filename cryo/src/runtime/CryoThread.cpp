@@ -17,7 +17,7 @@ namespace cryo::runtime {
 		m_Stack.push_function_call();
 		execute_node_block(m_Function->Body.get());
 		if (m_Flag != None && m_Flag != Return) {
-			throw std::runtime_error("break and continue need to be called from inside a loop!");
+			throw std::runtime_error("breaks and continues need to be called from inside a loop!");
 		}
 	}
 
@@ -151,16 +151,17 @@ namespace cryo::runtime {
 			}
 
 			case parser::TokenType::SLASH_EQUAL: {
-				assign_and_op<std::multiplies<int64_t>, std::multiplies<double>>(var, &right);
-				break;
-			}
-
-			case parser::TokenType::ASTERISK_EQUAL: {
 				assign_and_op<std::divides<int64_t>, std::divides<double>>(var, &right);
 				break;
 			}
 
+			case parser::TokenType::ASTERISK_EQUAL: {
+				assign_and_op<std::multiplies<int64_t>, std::multiplies<double>>(var, &right);
+				break;
+			}
+
 			default:
+				// This really shouldn't ever happen
 				throw std::runtime_error("Something went wrong when parsing!");
 		}
 	}

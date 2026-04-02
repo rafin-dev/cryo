@@ -12,8 +12,12 @@ fn main() {
    println(test);
 
    test = 10;
-   test += 58;
+   test -= 2;
    println(test);
+
+   print("Type your name: ");
+   var input = readln();
+   println("Hello ", input, "!");
 }
 
 fn greet(var i, var i2) {

@@ -16,6 +16,21 @@ namespace cryo::runtime {
 
 		search_NodeBlock(m_SyntaxTree.get());
 
+		set_internal_function("print", [](const std::vector<CryoValue>& params) -> CryoValue {
+			for (auto& param : params) {
+				if (auto str = std::get_if<std::string>(&param)) {
+					std::cout << *str;
+				}
+				else if (auto integer = std::get_if<int64_t>(&param)) {
+					std::cout << *integer;
+				}
+				else if (auto floating = std::get_if<double>(&param)) {
+					std::cout << *floating;
+				}
+			}
+			return CryoValue();
+			});
+
 		set_internal_function("println", [](const std::vector<CryoValue>& params) -> CryoValue {
 			for (auto& param : params) {
 				if (auto str = std::get_if<std::string>(&param)) {
@@ -30,6 +45,12 @@ namespace cryo::runtime {
 			}
 			std::cout << std::endl;
 			return CryoValue();
+			});
+
+		set_internal_function("readln", [](const std::vector<CryoValue>& params) -> CryoValue {
+			std::string input;
+			std::getline(std::cin, input);
+			return input;
 			});
 	}
 
