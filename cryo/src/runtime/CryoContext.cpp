@@ -97,7 +97,7 @@ namespace cryo::runtime {
 				search_NodeBlock(b);
 			}
 			if (auto* func = dynamic_cast<const parser::FunctionDefinitionNode*>(node.get()); func != nullptr) {
-				m_Functions.insert(std::pair(func->Identifier->Identifier.lexeme, func));
+				m_Functions.insert(std::pair(func->Identifier->Identifier, func));
 			}
 		}
 	}

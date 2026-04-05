@@ -15,15 +15,12 @@ namespace cryo::parser {
     std::string node_to_string(const Node* node);
 
     struct IdentifierNode : public Node {
-        IdentifierNode(Token id)
+        IdentifierNode(std::string id)
             : Identifier(std::move(id)) {
-            if (id.Type != TokenType::IDENTIFIER) {
-                throw std::logic_error("Identifier node cannot be created with non identifier token!");
-            }
         }
         ~IdentifierNode() override = default;
 
-        Token Identifier;
+        std::string Identifier;
     };
 
     struct NodeBlock : public Node {
@@ -37,7 +34,7 @@ namespace cryo::parser {
     };
 
     struct VariableDeclarationNode : public IdentifierNode {
-        VariableDeclarationNode(Token id)
+        VariableDeclarationNode(std::string id)
             : IdentifierNode(std::move(id)) 
         { }
         ~VariableDeclarationNode() override = default;
@@ -47,14 +44,14 @@ namespace cryo::parser {
         ~BinaryOperation() override = default;
 
         std::unique_ptr<Node> LeftValue;
-        Token Operator;
+        TokenType Operator;
         std::unique_ptr<Node> RightValue;
     };
 
     struct UnaryOperation : public Node {
         ~UnaryOperation() override = default;
 
-        Token Operator;
+        TokenType Operator;
         std::unique_ptr<Node> Value;
     };
 
@@ -62,7 +59,7 @@ namespace cryo::parser {
         ~AssignmentOperation() override = default;
 
         std::unique_ptr<Node> LeftValue;
-        Token Operator;
+        TokenType Operator;
         std::unique_ptr<Node> RightValue;
     };
 
@@ -124,65 +121,48 @@ namespace cryo::parser {
     };
 
     struct IntegerLiteralNode : public LiteralNode {
-        IntegerLiteralNode(Token integer)
+        IntegerLiteralNode(std::string integer)
             : Value(std::move(integer)) {
-            if (Value.Type != TokenType::INT) {
-                throw std::logic_error("IntegerLiteralNode cannot be created with non int token!");
-            }
         }
         ~IntegerLiteralNode() override = default;
 
-        Token Value;
+        std::string Value;
     };
 
     struct FloatLiteralNode : public LiteralNode {
-        FloatLiteralNode(Token f)
+        FloatLiteralNode(std::string f)
             : Value(std::move(f)) {
-            if (Value.Type != TokenType::FLOAT) {
-                throw std::logic_error("FloatLiteralNode cannot be created with non float token!");
-            }
         }
         ~FloatLiteralNode() override = default;
 
-        Token Value;
+        std::string Value;
     };
 
     struct CharLiteralNode : public LiteralNode {
-        CharLiteralNode(Token character)
-            : LexerToken(std::move(character)) {
-            Character = LexerToken.lexeme[0];
+        CharLiteralNode(char character) {
+            Character = character;
         }
         ~CharLiteralNode() override = default;
 
-        Token LexerToken;
         char Character;
     };
 
     struct StringLiteralNode : public LiteralNode {
-        StringLiteralNode(Token string)
-            : LexerToken(std::move(string)) {
-            if (LexerToken.Type != TokenType::STRING) {
-                throw std::runtime_error("StringLiteralNode cannot be created with non string token!");
-            }
-            Value = std::string(LexerToken.lexeme.data() + 1, LexerToken.lexeme.size() - 2);
+        StringLiteralNode(std::string string) 
+            : Value(string.data() + 1, string.size() - 2) {
         }
         ~StringLiteralNode() override = default;
 
-        Token LexerToken;
         std::string Value;
     };
 
     struct BoolLiteralNode : public LiteralNode {
-        BoolLiteralNode(Token b)
-            : Value(b.Type == TokenType::TRUE ? true : false), LexerToken(std::move(b)) {
-            if (LexerToken.Type != TokenType::TRUE && LexerToken.Type != TokenType::FALSE) {
-                throw std::logic_error("BoolLiteralNode cannot be created with non TRUE || FALSE token!");
-            }
+        BoolLiteralNode(bool b) {
+            Value = b;
         }
         ~BoolLiteralNode() override = default;
 
         bool Value;
-        Token LexerToken;
     };
 
 }

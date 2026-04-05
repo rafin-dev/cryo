@@ -76,7 +76,7 @@ namespace cryo::runtime {
 	}
 
 	void CryoThread::execute_variable_declaration_node(const parser::VariableDeclarationNode* var) {
-		auto result = m_Stack.push_variable(var->Identifier.lexeme);
+		auto result = m_Stack.push_variable(var->Identifier);
 		if (!result.has_value()) {
 			switch (result.error()) {
 			case StackOverflow:
@@ -126,7 +126,7 @@ namespace cryo::runtime {
 		CryoValue* var = nullptr;
 		// Assignment directly to a variable
 		if (auto identifier = dynamic_cast<const parser::IdentifierNode*>(ass->LeftValue.get())) {
-			var = m_Stack.get_variable(identifier->Identifier.lexeme);
+			var = m_Stack.get_variable(identifier->Identifier);
 		}
 		// TODO: other kinds of assignments
 		if (var == nullptr) {
@@ -134,7 +134,7 @@ namespace cryo::runtime {
 		}
 
 		auto right = std::move(expr_result.value());
-		switch (ass->Operator.Type) {
+		switch (ass->Operator) {
 			case parser::TokenType::EQUAL: {
 				*var = right;
 				break;
@@ -253,10 +253,10 @@ namespace cryo::runtime {
 	}
 
 	std::optional<CryoValue> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
-		auto func = m_Context->get_function(func_call->FuncID->Identifier.lexeme);
+		auto func = m_Context->get_function(func_call->FuncID->Identifier);
 		const InternalFunction* internal_func = nullptr;
 		if (func == nullptr) {
-			internal_func = m_Context->get_internal_function(func_call->FuncID->Identifier.lexeme);
+			internal_func = m_Context->get_internal_function(func_call->FuncID->Identifier);
 			if (internal_func == nullptr) {
 				throw std::runtime_error("Function does not exist!");
 			}
@@ -281,7 +281,7 @@ namespace cryo::runtime {
 
 			// Create parameter variables
 			for (int i = 0; i < params.size(); i++) {
-				auto var = m_Stack.push_variable(func->Parameters[i]->Identifier.lexeme);
+				auto var = m_Stack.push_variable(func->Parameters[i]->Identifier);
 				if (!var.has_value()) {
 					throw std::runtime_error("Failed to create parameter variable!");
 				}
@@ -360,10 +360,10 @@ namespace cryo::runtime {
 	std::optional<CryoValue> CryoThread::evaluate_literal_node(const parser::LiteralNode* node)
 	{
 		if (CHECK_NODE_TYPE(integer, parser::IntegerLiteralNode, node)) {
-			return CryoValue(std::stoi(integer->Value.lexeme));
+			return CryoValue(std::stoi(integer->Value));
 		}
 		else if (CHECK_NODE_TYPE(floating, parser::FloatLiteralNode, node)) {
-			return CryoValue(std::stof(floating->Value.lexeme));
+			return CryoValue(std::stof(floating->Value));
 		}
 		else if (CHECK_NODE_TYPE(boolean, parser::BoolLiteralNode, node)) {
 			return CryoValue(boolean->Value);
@@ -380,7 +380,7 @@ namespace cryo::runtime {
 
 	std::optional<CryoValue> CryoThread::evaluate_identifier_node(const parser::IdentifierNode* node)
 	{
-		auto var = m_Stack.get_variable(node->Identifier.lexeme);
+		auto var = m_Stack.get_variable(node->Identifier);
 		if (var == nullptr) {
 			return {};
 		}
@@ -429,7 +429,7 @@ return op((*left), (*r)); }
 		auto right_value = std::move(right_result.value());
 
 		// TODO: divide by 0 exception
-		switch (operation.Type) {
+		switch (operation) {
 			SWITCH_LABEL(parser::TokenType::PLUS, std::plus);
 			SWITCH_LABEL(parser::TokenType::MINUS, std::minus);
 			SWITCH_LABEL(parser::TokenType::ASTERISK, std::multiplies);
@@ -456,7 +456,7 @@ return op((*left), (*r)); }
 
 		auto value = std::move(v_result.value());
 
-		switch (operation.Type) {
+		switch (operation) {
 			case parser::TokenType::BANG: {
 				if (auto b = std::get_if<bool>(&value)) {
 					return !(*b);

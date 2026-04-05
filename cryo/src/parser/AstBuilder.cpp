@@ -44,7 +44,7 @@ namespace cryo::parser {
         }
 
         auto function_node = std::make_unique<FunctionDefinitionNode>();
-        function_node->Identifier = std::make_unique<IdentifierNode>(id);
+        function_node->Identifier = std::make_unique<IdentifierNode>(id.lexeme);
 
         if (const auto& open_param = advance(); open_param.Type != TokenType::END_OF_FILE) {
             if (open_param.Type != TokenType::LEFT_PAREN) {
@@ -93,7 +93,7 @@ namespace cryo::parser {
             return nullptr;
         }
 
-        if (auto body = build_function_body_ast(function_node->Identifier->Identifier.lexeme); body != nullptr) {
+        if (auto body = build_function_body_ast(function_node->Identifier->Identifier); body != nullptr) {
             function_node->Body = std::move(body);
         }
         else {
@@ -224,7 +224,7 @@ namespace cryo::parser {
             return nullptr;
         }
 
-        auto var_decl = std::make_unique<VariableDeclarationNode>(var_id);
+        auto var_decl = std::make_unique<VariableDeclarationNode>(var_id.lexeme);
 
         switch (auto& semicolon_or_assign = advance(); semicolon_or_assign.Type) {
             case TokenType::COMMA:
@@ -245,8 +245,8 @@ namespace cryo::parser {
                 block->Block.emplace_back(std::move(var_decl));
 
                 auto assignment = std::make_unique<AssignmentOperation>();
-                assignment->Operator = semicolon_or_assign;
-                assignment->LeftValue = std::make_unique<IdentifierNode>(var_id);
+                assignment->Operator = semicolon_or_assign.Type;
+                assignment->LeftValue = std::make_unique<IdentifierNode>(var_id.lexeme);
                 advance();
                 assignment->RightValue = build_expression_ast();
                 if (assignment->RightValue == nullptr) {
@@ -290,20 +290,22 @@ namespace cryo::parser {
         if (tokens.size() == 1) {
             switch (tokens.begin()->Type) {
                 case TokenType::IDENTIFIER: {
-                    return std::make_unique<IdentifierNode>(*tokens.begin());
+                    return std::make_unique<IdentifierNode>(tokens.begin()->lexeme);
                 }
                 case TokenType::STRING: {
-                    return std::make_unique<StringLiteralNode>(*tokens.begin());
+                    return std::make_unique<StringLiteralNode>(tokens.begin()->lexeme);
                 }
                 case TokenType::INT: {
-                    return std::make_unique<IntegerLiteralNode>(*tokens.begin());
+                    return std::make_unique<IntegerLiteralNode>(tokens.begin()->lexeme);
                 }
                 case TokenType::FLOAT: {
-                    return std::make_unique<FloatLiteralNode>(*tokens.begin());
+                    return std::make_unique<FloatLiteralNode>(tokens.begin()->lexeme);
                 }
-                case TokenType::TRUE:
+                case TokenType::TRUE: {
+                    return std::make_unique<BoolLiteralNode>(true);
+                }
                 case TokenType::FALSE: {
-                    return std::make_unique<BoolLiteralNode>(*tokens.begin());
+                    return std::make_unique<BoolLiteralNode>(false);
                 }
 
                 default:
@@ -333,8 +335,8 @@ namespace cryo::parser {
             case TokenType::MINUS: {
                 if (op == 0) { // Minus with no left value means: 0 - right_value
                     auto op_node = std::make_unique<BinaryOperation>();
-                    op_node->Operator = operator_token;
-                    op_node->LeftValue = std::make_unique<FloatLiteralNode>(Token{"0", 0, 0, TokenType::FLOAT});
+                    op_node->Operator = operator_token.Type;
+                    op_node->LeftValue = std::make_unique<FloatLiteralNode>("0");
                     op_node->RightValue = build_expression_component_ast(
                         remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1))
                     );
@@ -364,7 +366,7 @@ namespace cryo::parser {
                 }
 
                 auto op_node = std::make_unique<BinaryOperation>();
-                op_node->Operator = operator_token;
+                op_node->Operator = operator_token.Type;
                 op_node->LeftValue = build_expression_component_ast(remove_useless_paren(std::span(tokens.data(), op)));
                 op_node->RightValue = 
                     build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
@@ -383,7 +385,7 @@ namespace cryo::parser {
                 }
 
                 auto op_node = std::make_unique<UnaryOperation>();
-                op_node->Operator = operator_token;
+                op_node->Operator = operator_token.Type;
                 op_node->Value = build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
                 return op_node->Value != nullptr ? std::move(op_node) : nullptr;
             }
@@ -394,7 +396,7 @@ namespace cryo::parser {
             case TokenType::SLASH_EQUAL:
             case TokenType::EQUAL: {
                 auto ass = std::make_unique<AssignmentOperation>();
-                ass->Operator = operator_token;
+                ass->Operator = operator_token.Type;
 
                 ass->LeftValue = 
                     build_expression_component_ast(remove_useless_paren(std::span(tokens.data(), op)));
@@ -408,7 +410,8 @@ namespace cryo::parser {
             case TokenType::COMMA: {
                 auto expr_list = std::make_unique<NodeBlock>();
 
-                auto left = build_expression_component_ast(remove_useless_paren(std::span(tokens.data(), op)));
+                auto left = 
+                    build_expression_component_ast(remove_useless_paren(std::span(tokens.data(), op)));
                 if (auto* left_list = dynamic_cast<NodeBlock*>(left.get())) {
                     expr_list->Block = std::move(left_list->Block);
                 }
@@ -417,7 +420,9 @@ namespace cryo::parser {
                 }
 
                 auto right = 
-                    build_expression_component_ast(remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1)));
+                    build_expression_component_ast(
+                        remove_useless_paren(std::span(tokens.data() + op + 1, tokens.size() - op - 1))
+                    );
                 if (auto* right_list = dynamic_cast<NodeBlock*>(right.get())) {
                     for (auto& expr : right_list->Block) {
                         expr_list->Block.emplace_back(std::move(expr));
@@ -440,7 +445,7 @@ namespace cryo::parser {
 
     std::unique_ptr<Node> AstBuilder::build_function_call_ast(const std::span<const Token> tokens) {
         auto func_call = std::make_unique<FunctionCallNode>();
-        func_call->FuncID = std::make_unique<IdentifierNode>(tokens[0]);
+        func_call->FuncID = std::make_unique<IdentifierNode>(tokens[0].lexeme);
 
         auto result = build_expression_component_ast(std::span(tokens.data() + 2, tokens.size() - 3));
         if (!result) {

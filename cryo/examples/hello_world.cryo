@@ -1,4 +1,5 @@
 fn main() {
+   readln();
    println(hi());
 
    var test = 10;

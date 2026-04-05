@@ -17,7 +17,7 @@ add_executable(cryo src/main.cpp
         src/parser/AST.h
         src/parser/AstBuilder.cpp
         src/parser/AstBuilder.h
-        src/parser/AST.cpp
+        
         src/parser/Parser.cpp
         src/parser/Parser.h
 
