@@ -316,6 +316,7 @@ namespace cryo::runtime {
 		if (auto i64 = std::get_if<int64_t>(&result)) {
 			if (*i64 < 0) {
 				throw std::runtime_error("Loop count cannot be a negative value!");
+				return 0;
 			}
 			return *i64;
 		}
