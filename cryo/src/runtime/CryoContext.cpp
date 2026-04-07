@@ -7,7 +7,7 @@ namespace cryo::runtime {
 
 	CryoContext::CryoContext(std::filesystem::path file) 
 		: m_MainFile(std::move(file)) {
-		auto result = parser::Parser(m_MainFile, "").parse();
+		auto result = parser::Parser(m_MainFile).parse();
 		if (!result.has_value()) {
 			std::exit(-1);
 		}
@@ -16,6 +16,7 @@ namespace cryo::runtime {
 
 		search_NodeBlock(m_SyntaxTree.get());
 
+		// TODO: organize internal functions as 'standard library' packages
 		set_internal_function("print", [](const std::vector<CryoValue>& params) -> CryoValue {
 			for (auto& param : params) {
 				if (auto str = std::get_if<std::string>(&param)) {

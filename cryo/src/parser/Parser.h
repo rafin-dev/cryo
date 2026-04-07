@@ -10,7 +10,7 @@ namespace cryo::parser {
 
     class Parser {
     public:
-        Parser(std::filesystem::path file, std::filesystem::path output);
+        Parser(std::filesystem::path file);
         ~Parser() = default;
 
         std::optional<std::unique_ptr<NodeBlock>> parse() const;

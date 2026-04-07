@@ -6,8 +6,8 @@
 
 namespace cryo::parser {
 
-    Parser::Parser(std::filesystem::path file, std::filesystem::path output)
-        : m_FilePath(std::move(file)), m_OutputFile(std::move(output)) {
+    Parser::Parser(std::filesystem::path file)
+        : m_FilePath(std::move(file)) {
         std::fstream file_stream(m_FilePath);
         std::stringstream stream;
         stream << file_stream.rdbuf();
