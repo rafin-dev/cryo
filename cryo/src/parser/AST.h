@@ -177,7 +177,10 @@ namespace cryo::parser {
         std::unique_ptr<ScopeNode> Destructor;
 
         std::vector<std::pair<std::unique_ptr<FunctionDefinitionNode>, Visibility>> Constructors;
+        
         std::vector<std::pair<std::unique_ptr<FunctionDefinitionNode>, Visibility>> Methods;
+        std::vector<std::pair<std::unique_ptr<FunctionDefinitionNode>, Visibility>> StaticMethods;
+        
         std::unordered_map<std::string, std::pair<uint32_t, Visibility>> MembersOffset;
         std::unordered_map<std::string, std::pair<runtime::CryoValue, Visibility>> StaticMembers;
     };

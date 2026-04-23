@@ -1,18 +1,23 @@
 class MyClass {
 public:
-    //constructor New(var msg) {
-    //    this.Member = msg;
-    //}
-    //
-    //destructor {
-    //    println("Variable died!");
-    //}
+    constructor New(var msg) {
+        //this.Member = msg;
+    }
+    
+    destructor {
+        println("Variable died!");
+    }
 
     fn print() {
         println(msg);
     }
 
-    //var Member;
+    static fn wow() {
+        println("I'm static!");
+    }
+
+    static var otherMember;
+    var Member;
 }
 
 fn main() {

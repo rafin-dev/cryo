@@ -43,3 +43,5 @@ namespace cryo::parser {
 #define CE_EMPTY_EXPRESSION                       "CE1006"
 #define CE_NO_PARENTHESIS_TO_CLOSE                "CE1007"
 #define CE_UNEXPECTED_TOKEN                       "CE1008"
+#define CE_DESTRUCTOR_REDEFINITION                "CE1009"
+#define CE_INLINE_MEMBER_INITIALIZATION           "CE100A"

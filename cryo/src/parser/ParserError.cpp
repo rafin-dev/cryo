@@ -128,5 +128,7 @@ namespace cryo::parser {
         { CE_EMPTY_EXPRESSION,                       ErrorSeverity::Error },
         { CE_NO_PARENTHESIS_TO_CLOSE,                ErrorSeverity::Error },
         { CE_UNEXPECTED_TOKEN,                       ErrorSeverity::Error },
+        { CE_DESTRUCTOR_REDEFINITION,                ErrorSeverity::Error },
+        { CE_INLINE_MEMBER_INITIALIZATION,           ErrorSeverity::Error },
     };
 }

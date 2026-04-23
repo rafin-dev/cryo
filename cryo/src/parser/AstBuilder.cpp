@@ -486,10 +486,11 @@ namespace cryo::parser {
         auto class_def = std::make_unique<ClassDefinitionNode>();
         class_def->ClassIdentifier = std::make_unique<IdentifierNode>(id);
 
+        uint32_t current_offset = 0;
         auto current_visibility = ClassDefinitionNode::Private;
         while (advance().Type != TokenType::RIGHT_BRACE) {
+            bool is_static = false;
             switch (peek().Type) {
-
             case TokenType::PRIVATE: {
                 if (advance().Type != TokenType::COLON) {
                     push_error(CE_UNEXPECTED_TOKEN, "Expected ':' after visibility declaration!");
@@ -515,9 +516,82 @@ namespace cryo::parser {
                 break;
             }
 
-            case TokenType::FN: {
+            case TokenType::STATIC: {
+                is_static = true;
+                switch (advance().Type) {
+                case TokenType::FN: goto method;
+                case TokenType::VAR: goto var;
+                default: {
+                    push_error(CE_UNEXPECTED_TOKEN, "Expected either method or member declaration after static modifier!");
+                    return nullptr;
+                }
+                }
+                break;
+            }
+
+            case TokenType::FN:  method: {
                 if (auto method = build_function_ast(); method != nullptr) {
-                    class_def->Methods.emplace_back(std::pair(std::move(method), current_visibility));
+                    if (!is_static) {
+                        class_def->Methods.emplace_back(std::pair(std::move(method), current_visibility));
+                    }
+                    else {
+                        class_def->StaticMethods.emplace_back(std::pair(std::move(method), current_visibility));
+                    }
+                }
+                else {
+                    return nullptr;
+                }
+                break;
+            }
+
+            case TokenType::VAR: var: {
+                if (auto member_node = build_variable_declaration_ast(); member_node != nullptr) {
+                    auto* member = dynamic_cast<VariableDeclarationNode*>(member_node.get());
+                    if (member != nullptr) {
+                        if (!is_static) {
+                            class_def->MembersOffset.emplace(
+                                std::make_pair(member->Identifier, std::make_pair(current_offset, current_visibility))
+                            );
+                            current_offset += sizeof(runtime::CryoValue);
+                        }
+                        else {
+                            class_def->StaticMembers.emplace(
+                                std::make_pair(member->Identifier, std::make_pair(runtime::CryoValue(), current_visibility))
+                            );
+                        }
+                    }
+                    else { // build_var...() returned a NodeBlock due to inline initialization
+                        push_error(CE_INLINE_MEMBER_INITIALIZATION, "Cryo does not support default values for members!");
+                        return nullptr;
+                    }
+                }
+                else {
+                    return nullptr;
+                }
+                break;
+            }
+
+            case TokenType::CONSTRUCTOR: {
+                if (auto constr = build_function_ast(); constr != nullptr) {
+                    class_def->Constructors.emplace_back(std::pair(std::move(constr), current_visibility));
+                }
+                else {
+                    return nullptr;
+                }
+                break;
+            }
+
+            case TokenType::DESTRUCTOR: {
+                if (class_def->Destructor != nullptr) {
+                    push_error(CE_DESTRUCTOR_REDEFINITION, "Classes can only have a single destructor!");
+                    return nullptr;
+                }
+                advance();
+                if (auto destructor = build_scope_node(); destructor != nullptr) {
+                    class_def->Destructor = std::move(destructor);
+                }
+                else {
+                    return nullptr;
                 }
                 break;
             }
