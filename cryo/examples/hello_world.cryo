@@ -1,34 +1,53 @@
+class MyClass {
+public:
+    //constructor New(var msg) {
+    //    this.Member = msg;
+    //}
+    //
+    //destructor {
+    //    println("Variable died!");
+    //}
+
+    fn print() {
+        println(msg);
+    }
+
+    //var Member;
+}
+
 fn main() {
-   readln();
-   println(hi());
+    //var obj = MyClass.New("Hello, this is an object!");
+    //obj.print();
 
-   var test = 10;
-   if (test < 5) {
-      println(test);
-   }
-   else {
-      println("not this time");
-   }
-   test = "ola";
-   println(test);
+    println(hi());
 
-   test = 10;
-   test -= 2;
-   println(test);
+    var test = 10;
+    if (test < 5) {
+        println(test);
+    }
+    else {
+        println("not this time");
+    }
+    test = "ola";
+    println(test);
 
-   print("Type your name: ");
-   var input = readln();
-   println("Hello ", input, "!");
+    test = 10;
+    test -= 2;
+    println(test);
+
+    print("Type your name: ");
+    var input = readln();
+    println("Hello ", input, "!");
 }
 
 fn greet(var i, var i2) {
-   println("Hi, i'm a different function!");
-   println(i);
-   println(i2);
+    println("Hi, i'm a different function!");
+    println(i);
+    println(i2);
 }
 
 fn hi() {
-   println("hello");
-   greet(25, 10.6);
-   return "Hello, World!";
+    println("hello");
+    greet(25, 10.6);
+    return "Hello, World!";
 }

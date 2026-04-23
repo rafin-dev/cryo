@@ -5,14 +5,13 @@
 #include <vector>
 
 #include "Token.h"
+#include "runtime/TypeID.h"
 
 namespace cryo::parser {
 
     struct Node {
         virtual ~Node() = default;
     };
-
-    std::string node_to_string(const Node* node);
 
     struct IdentifierNode : public Node {
         IdentifierNode(std::string id)
@@ -163,6 +162,24 @@ namespace cryo::parser {
         ~BoolLiteralNode() override = default;
 
         bool Value;
+    };
+
+    struct ClassDefinitionNode : public Node {
+        ~ClassDefinitionNode() override = default;
+
+        enum Visibility {
+            Private = 0,
+            Protected,
+            Public
+        };
+
+        std::unique_ptr<IdentifierNode> ClassIdentifier;
+        std::unique_ptr<ScopeNode> Destructor;
+
+        std::vector<std::pair<std::unique_ptr<FunctionDefinitionNode>, Visibility>> Constructors;
+        std::vector<std::pair<std::unique_ptr<FunctionDefinitionNode>, Visibility>> Methods;
+        std::unordered_map<std::string, std::pair<uint32_t, Visibility>> MembersOffset;
+        std::unordered_map<std::string, std::pair<runtime::CryoValue, Visibility>> StaticMembers;
     };
 
 }

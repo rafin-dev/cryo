@@ -22,6 +22,8 @@ namespace cryo::parser {
         std::unique_ptr<Node> build_expression_component_ast(std::span<const Token> tokens);
         std::unique_ptr<Node> build_function_call_ast(const std::span<const Token> tokens);
 
+        std::unique_ptr<Node> build_class_definition_ast();
+
         std::unique_ptr<Node> build_if_statement_node();
         std::unique_ptr<Node> build_while_statement_node();
         std::unique_ptr<Node> build_loop_statement_node();

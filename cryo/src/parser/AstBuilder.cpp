@@ -26,6 +26,11 @@ namespace cryo::parser {
                 }
                 continue;
             }
+            else if (token->Type == TokenType::CLASS) {
+                if (auto class_def = build_class_definition_ast(); class_def != nullptr) {
+                    node_block->Block.emplace_back(std::move(class_def));
+                }
+            }
             advance();
         }
 
@@ -33,7 +38,7 @@ namespace cryo::parser {
     }
 
     std::unique_ptr<FunctionDefinitionNode> AstBuilder::build_function_ast() {
-        auto id = advance(); // The token after 'fn' has to be the function identifier
+        auto id = advance(); // The token after a function defining keyword has to be the function identifier
         if (id.Type == TokenType::END_OF_FILE) {
             push_error(CE_UNEXPECTED_END, "Expected identifier after keyword 'fn', found nothing!");
             return nullptr;
@@ -462,6 +467,76 @@ namespace cryo::parser {
         }
 
         return std::move(func_call);
+    }
+
+    std::unique_ptr<Node> AstBuilder::build_class_definition_ast()
+    {
+        if (advance().Type != TokenType::IDENTIFIER) {
+            push_error(CE_UNEXPECTED_TOKEN, "Class definition missing Identifier");
+            return nullptr;
+        }
+
+        const std::string& id = peek().lexeme;
+
+        if (advance().Type != TokenType::LEFT_BRACE) {
+            push_error(CE_UNEXPECTED_TOKEN, "Class definition missing opening bracket!");
+            return nullptr;
+        }
+
+        auto class_def = std::make_unique<ClassDefinitionNode>();
+        class_def->ClassIdentifier = std::make_unique<IdentifierNode>(id);
+
+        auto current_visibility = ClassDefinitionNode::Private;
+        while (advance().Type != TokenType::RIGHT_BRACE) {
+            switch (peek().Type) {
+
+            case TokenType::PRIVATE: {
+                if (advance().Type != TokenType::COLON) {
+                    push_error(CE_UNEXPECTED_TOKEN, "Expected ':' after visibility declaration!");
+                    return nullptr;
+                }
+                current_visibility = ClassDefinitionNode::Private;
+                break;
+            }
+            case TokenType::PROTECTED: {
+                if (advance().Type != TokenType::COLON) {
+                    push_error(CE_UNEXPECTED_TOKEN, "Expected ':' after visibility declaration!");
+                    return nullptr;
+                }
+                current_visibility = ClassDefinitionNode::Protected;
+                break;
+            }
+            case TokenType::PUBLIC: {
+                if (advance().Type != TokenType::COLON) {
+                    push_error(CE_UNEXPECTED_TOKEN, "Expected ':' after visibility declaration!");
+                    return nullptr;
+                }
+                current_visibility = ClassDefinitionNode::Public;
+                break;
+            }
+
+            case TokenType::FN: {
+                if (auto method = build_function_ast(); method != nullptr) {
+                    class_def->Methods.emplace_back(std::pair(std::move(method), current_visibility));
+                }
+                break;
+            }
+
+            case TokenType::END_OF_FILE: {
+                push_error(CE_UNEXPECTED_END, "Class definition was never closed");
+                return nullptr;
+                break;
+            }
+
+            default: {
+                push_error(CE_UNEXPECTED_TOKEN,
+                    std::format("Unexpected token '{}', in class definition '{}'", peek().lexeme, id)
+                );
+                return nullptr;
+            }
+            }
+        }
+        return class_def;
     }
 
     std::unique_ptr<Node> AstBuilder::build_if_statement_node()
