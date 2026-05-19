@@ -20,7 +20,7 @@ namespace cryo::parser {
         std::unique_ptr<Node> build_variable_declaration_ast(bool is_param = false);
         std::unique_ptr<Node> build_expression_ast();
         std::unique_ptr<Node> build_expression_component_ast(std::span<const Token> tokens);
-        std::unique_ptr<Node> build_function_call_ast(const std::span<const Token> tokens);
+        std::unique_ptr<Node> build_function_call_ast(const std::span<const Token> function, const std::span<const Token> parameters);
 
         std::unique_ptr<Node> build_class_definition_ast();
 
@@ -47,6 +47,8 @@ namespace cryo::parser {
         std::shared_ptr<std::vector<Token>> m_Tokens;
         std::shared_ptr<std::string> m_Source;
         ErrorQueue m_ErrorQueue;
+
+        static std::map<TokenType, uint32_t> s_operator_reverse_order;
     };
 
 } // cryo

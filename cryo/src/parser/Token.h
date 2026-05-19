@@ -20,7 +20,7 @@ namespace cryo::parser {
 
         STRING, INT, FLOAT, // "*" [1/2/3...] *.*
 
-        // Self-explanatory
+        // keywords
         FN, VAR, IF, ELSE, TRUE, FALSE, FOR, WHILE, LOOP,
         CLASS, CONSTRUCTOR, DESTRUCTOR, STATIC, PUBLIC, PROTECTED, PRIVATE,
         THIS, RETURN, CONTINUE, BREAK,

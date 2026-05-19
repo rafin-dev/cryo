@@ -253,10 +253,10 @@ namespace cryo::runtime {
 	}
 
 	std::optional<CryoValue> CryoThread::evaluate_function_call_node(const parser::FunctionCallNode* func_call) {
-		auto func = m_Context->get_function(func_call->FuncID->Identifier);
+		auto func = m_Context->get_function(reinterpret_cast<parser::IdentifierNode*>(func_call->Func.get())->Identifier);
 		const InternalFunction* internal_func = nullptr;
 		if (func == nullptr) {
-			internal_func = m_Context->get_internal_function(func_call->FuncID->Identifier);
+			internal_func = m_Context->get_internal_function(reinterpret_cast<parser::IdentifierNode*>(func_call->Func.get())->Identifier);
 			if (internal_func == nullptr) {
 				throw std::runtime_error("Function does not exist!");
 			}
@@ -442,6 +442,12 @@ return op((*left), (*r)); }
 			SWITCH_LABEL(parser::TokenType::LESS_EQUAL, std::less_equal);
 			SWITCH_LABEL(parser::TokenType::GREATER, std::greater);
 			SWITCH_LABEL(parser::TokenType::GREATER_EQUAL, std::greater_equal);
+
+		// Access operator
+		case parser::TokenType::DOT: {
+
+			break;
+		}
 		}
 
 		return {};

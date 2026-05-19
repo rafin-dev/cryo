@@ -319,19 +319,42 @@ namespace cryo::parser {
             }
         }
 
-        // To be a function call it needs to be at least 3 tokens -> id(...)
-        if (tokens.size() > 2 && 
-            tokens[0].Type == TokenType::IDENTIFIER && 
-            tokens[1].Type == TokenType::LEFT_PAREN &&
-            tokens[tokens.size() - 1].Type == TokenType::RIGHT_PAREN) {
-            return build_function_call_ast(tokens);
+        // To be a function call the expression needs to end with the closing of a parenthesis
+        if (tokens.size() > 2 && tokens[tokens.size() - 1].Type == TokenType::RIGHT_PAREN) {
+            // and a the opening for the last closing parenthesis needs to have an non operator token precending it
+            int32_t rev_open_paren = 1;
+            int open_paren = 0;
+            for (int i = tokens.size() - 2; i > -1 && rev_open_paren != 0; i--) { // Start from the second to last
+                switch (tokens[i].Type) {
+                case TokenType::RIGHT_PAREN: {
+                    rev_open_paren += 1;
+                    break;
+                }
+                case TokenType::LEFT_PAREN: {
+                    rev_open_paren -= 1;
+                    break;
+                }
+                }
+
+                open_paren = i;
+            }
+
+            if (rev_open_paren != 0) { // Means more parenthesis were closed than were open
+                push_error(CE_NO_PARENTHESIS_TO_CLOSE, "Mismatched left and right parenthesis!", &tokens[tokens.size() - 1]);
+                return nullptr;
+            }
+
+            if (open_paren != 0 && !s_operator_reverse_order.contains(tokens[open_paren - 1].Type)) {
+                return build_function_call_ast(std::span<const Token>(tokens.data(), open_paren),
+                    std::span<const Token>(tokens.data() + open_paren, tokens.size() - open_paren));
+            }
         }
 
         uint32_t op;
         if (const auto result = get_least_priority_operator(tokens); result.has_value()) {
             op = result.value();
         } else { // No operators with more than 1 token should mean a function call
-            // TODO: function call
+            // TODO: unable to build expression error
             return nullptr;
         }
 
@@ -364,6 +387,7 @@ namespace cryo::parser {
             case TokenType::AND:
             case TokenType::AND_AND:
             case TokenType::OR:
+            case TokenType::DOT:
             case TokenType::OR_OR: {
                 if (op == 0 || op == tokens.size() - 1) {
                     push_error(CE_EMPTY_EXPRESSION, std::format("Expected expression for operator {}!", TokenType_to_string(tokens[op].Type)));
@@ -448,11 +472,14 @@ namespace cryo::parser {
         }
     }
 
-    std::unique_ptr<Node> AstBuilder::build_function_call_ast(const std::span<const Token> tokens) {
+    std::unique_ptr<Node> AstBuilder::build_function_call_ast(const std::span<const Token> function, const std::span<const Token> parameters) {
         auto func_call = std::make_unique<FunctionCallNode>();
-        func_call->FuncID = std::make_unique<IdentifierNode>(tokens[0].lexeme);
+        func_call->Func = build_expression_component_ast(function);
 
-        auto result = build_expression_component_ast(std::span(tokens.data() + 2, tokens.size() - 3));
+        if (parameters.size() == 2) {
+            return std::move(func_call);
+        }
+        auto result = build_expression_component_ast(std::span<const Token>(parameters.data() + 1, parameters.size() - 2));
         if (!result) {
             return std::move(func_call);
         }
@@ -800,7 +827,7 @@ namespace cryo::parser {
         return std::span<Token>(m_Tokens->data() + start, size);
     }
 
-    std::map<TokenType, uint32_t> s_operator_reverse_order = {
+    std::map<TokenType, uint32_t> AstBuilder::s_operator_reverse_order = {
         // Comma
         { TokenType::COMMA, 1 },
 
@@ -844,6 +871,9 @@ namespace cryo::parser {
 
         // Logical not
         { TokenType::BANG, 11 },
+
+        // Access operator
+        { TokenType::DOT, 12 },
     };
 
     std::optional<uint32_t> AstBuilder::get_least_priority_operator(const std::span<const Token> expression) {

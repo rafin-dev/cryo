@@ -1,3 +1,7 @@
+fn test() {
+    MyClass.new();
+}
+
 class MyClass {
 public:
     constructor New(var msg) {
@@ -23,6 +27,8 @@ public:
 fn main() {
     //var obj = MyClass.New("Hello, this is an object!");
     //obj.print();
+
+    MyClass.new;
 
     println(hi());
 
