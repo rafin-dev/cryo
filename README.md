@@ -76,7 +76,7 @@ fn main() {
 // count: 1
 // count: 2
 ```
-This type of loop repeats it's body until the condition becomes expression becomes false
+This type of loop repeats it's body until the condition expression becomes false
 
 ## Declaring and calling functions
 Functions are declared with the 'fn' keyword and don't need to be defined before they are called in the file, as long as the function exists somewhere

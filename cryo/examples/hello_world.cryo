@@ -1,5 +1,4 @@
 fn main() {
-   readln();
    println(hi());
 
    var test = 10;
@@ -10,7 +9,9 @@ fn main() {
       println("not this time");
    }
    test = "ola";
-   println(test);
+   loop (10) {
+      println(test);
+   }
 
    test = 10;
    test -= 2;
